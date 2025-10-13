@@ -1,0 +1,47 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "DAPlink",
+            "cwd": "${workspaceRoot}/",
+            "executable": "${workspaceRoot}\\build\\Debug\\${workspaceFolderBasename}.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd", //要选择的GDB server
+            "device": "STM32F407VE", //
+            "interface": "swd",
+            "configFiles": [
+                // "${workspaceRoot}/openocd.cfg"
+                "interface/cmsis-dap.cfg",
+                "target/stm32f4x.cfg",
+            ],
+            "runToEntryPoint": "main",
+            "showDevDebugTimestamps": true,
+            "preLaunchTask": "build", //先运行Build任务编译项目,取消注释即可使用
+            // "svdFile": "${workspaceRoot}/STM32F103.svd",
+            "svdFile": "STM32F407.svd",
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 20
+            },
+            "rttConfig": {
+                "enabled": false,
+                "address": "auto",
+                "clearSearch": false,
+                "polling_interval": 1000,
+                "decoders": [
+                    {
+                        "label": "",
+                        "port": 0,
+                        "type": "console"
+                    }
+                ]
+            }
+        }
+    ]
+}
+
+
+
+
+

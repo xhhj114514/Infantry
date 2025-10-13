@@ -1,0 +1,58 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "cmake",
+            "command": "build",
+            // "dependsOn":"Clean CMake File",
+        },
+        {
+            "label":"Clean Build File",
+            "type":"shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "build/Debug",
+                "--target",
+                "clean"
+            ],
+            "group": "build",
+            "presentation":{
+                "reveal":"always",
+                "panel":"new"
+            },
+            "problemMatcher":[]
+        },
+        {
+            "label": "Configure All Projects",//Must Be Done after "Remove CMake Cache"
+            "type": "cmake",
+            "command": "configure",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        },
+        {
+            "label":"Remove CMake Cache",
+            "type":"shell",
+            "command": "Remove-Item -Recurse -Force ${workspaceFolder}/build",
+        },
+		{
+			"label": "Flash with OpenOCD",
+			"type": "shell",
+			"command": "openocd",
+			"args": [
+				"-f",
+                "${workspaceFolder}/openocd.cfg",
+                "-c",
+                "program ./build/Debug/${workspaceFolderBasename}.elf verify reset exit"
+			],
+            "dependsOn": "build",
+			"problemMatcher": [],
+		}
+    ]
+}
