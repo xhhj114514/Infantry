@@ -21,8 +21,8 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # 强制将 compile_commands.json 复制到项目根目录,需要ctrl+shift+p重启clangd语言服务器
-# file(COPY "${CMAKE_BINARY_DIR}/compile_commands.json"
-#      DESTINATION "${CMAKE_SOURCE_DIR}")
+file(COPY "${CMAKE_BINARY_DIR}/compile_commands.json"
+     DESTINATION "${CMAKE_SOURCE_DIR}")
 
 
 # Define the build type
