@@ -1,0 +1,25 @@
+
+OpenDocument="robot_cmd.c", FilePath="F:/DT46/WS/CMAKE/F4/Infantry/application/cmd/robot_cmd.c", Line=0
+OpenDocument="gimbal_algorithm.c", FilePath="F:/DT46/WS/CMAKE/F4/Infantry/application/gimbal_algorithm/gimbal_algorithm.c", Line=0
+OpenDocument="robot.c", FilePath="F:/DT46/WS/CMAKE/F4/Infantry/application/robot.c", Line=5
+OpenDocument="startup_stm32f407xx.s", FilePath="F:/DT46/WS/CMAKE/F4/Infantry/startup_stm32f407xx.s", Line=50
+OpenDocument="main.c", FilePath="F:/DT46/WS/CMAKE/F4/Infantry/Src/main.c", Line=68
+OpenToolbar="Debug", Floating=0, x=0, y=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=591, h=153, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=633, h=633, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=BOTTOM, x=0, y=0, w=1920, h=307, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=RIGHT, x=0, y=1, w=591, h=479, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 ns / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=0, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="439;0", PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="421;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="427;0"
+OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=1920, h=307, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+TableHeader="Power Sampling", SortCol="Index", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh"], ColWidths=[164;241;133;100]
+TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="Data Sampling Table", SortCol="Index", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[100;100;100;100;100;100;100;100;1120]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;351]
+WatchedExpression="minipc_usart_instance", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="minipc_send_data", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="send_buff", RefreshRate=1, Window=Watched Data 1
+WatchedExpression="yaw_ref", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="gimbal_cmd_recv", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="gimbal_algorithm", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="gimbal_fetch_data", RefreshRate=5, Window=Watched Data 1

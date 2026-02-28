@@ -4,7 +4,7 @@
 #include "bsp_usart.h"
 #include "seasky_protocol.h"
 
-#define Minipc_Recv_sIZE 18u // 当前为固定值,36字节
+#define Minipc_Recv_sIZE 16u // 当前为固定值,36字节
 #define Minipc_Send_sIZE 36u
 
 #pragma pack(1)
@@ -39,14 +39,25 @@ typedef enum
 
 typedef struct
 {
+	uint8_t header;  // 帧头，固定为0x5A
 	struct
-    {
-		uint8_t header;  // 帧头，固定为0x5A
-		float yaw;       // 需要云台转动的相对 yaw 角
-		float pitch;     // 需要云台转动的相对 pitch 角
-		float deep;     // 物体距离
-		uint16_t checksum; // 校验和
+	{
+		float pitch;
+		float yaw;
+		int8_t shoot_flag;
+		int32_t time;
 	}Vision;
+	// struct
+	// {
+	// 	uint8_t detect_color;
+	// 	float yaw;
+	// 	float pitch;
+	// 	float roll; 
+	// 	float line_vx;
+	// 	float line_vy;
+	// 	uint8_t gimbal_mode;
+	// 	uint8_t ender; //0X2B 
+	// }NAV;
 
 } __attribute__((packed)) Minipc_Recv_s;
 
@@ -65,15 +76,25 @@ typedef enum
 
 typedef struct
 {
+	uint8_t header;  // 帧头，固定为0xA5
 	struct
 	{
-		uint8_t header;  // 帧头，固定为0x5A
 		uint8_t detect_color;
 		float roll;
 		float pitch;
 		float yaw;
-		uint16_t checksum; // 校验和
 	}Vision;
+	// struct
+	// {
+	// 	uint8_t detect_color;
+	// 	float roll;
+	// 	float pitch;
+	// 	float gz; 
+	// 	float line_vx;
+	// 	float line_vy;
+	// 	uint8_t gimbal_mode;
+	// 	uint8_t ender; //0X2B 
+	// }NAV;
 
 } __attribute__((packed)) Minipc_Send_s;
 
@@ -97,6 +118,8 @@ Minipc_Recv_s *minipcInit(UART_HandleTypeDef *_handle);
  *
  */
 void SendMinipcData();
+
+void NAV_SEND(float vx, float vy, float yaw,uint8_t occupation,uint8_t detect_color);
 
 
 

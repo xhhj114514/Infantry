@@ -6,7 +6,7 @@
 #include "general_def.h"
 #include "mi_motor.h"
 #include "bmi088.h"
-
+#include "gimbal_algorithm.h"
 static attitude_t *gimbal_IMU_data; // 云台IMU数据
 static DJIMotorInstance *yaw_motor;
 static MIMotorInstance *pitch_motor;
@@ -22,7 +22,7 @@ void GimbalInit()
     // YAW
     Motor_Init_Config_s yaw_config = {
         .can_init_config = {
-            .can_handle = &hcan2,
+            .can_handle = &hcan1,
             .tx_id = 1,
         },
         .controller_param_init_config = {
@@ -45,7 +45,6 @@ void GimbalInit()
                 .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
                 .MaxOut = 20000,
-                .FF_Gain = 500.0,
             },
             .other_angle_feedback_ptr = &gimbal_IMU_data->YawTotalAngle,
             // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
@@ -67,14 +66,8 @@ void GimbalInit()
         },
         .controller_param_init_config={
             .angle_PID={
-                .Kp=10,
-                .Kd=0.35,
-                .FF_Gain = 0.0,
-            },
-            .speed_PID={
-                .Kp=1,
-                .Ki=0.01,
-                .FF_Gain = 0.0,
+                .Kp = 40,
+                .Kd = 0.35,
             },
         },
     };
@@ -89,9 +82,14 @@ void GimbalInit()
     gimbal_pub = PubRegister("gimbal_feed", sizeof(Gimbal_Upload_Data_s));
     gimbal_sub = SubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
 }
+float yaw_ref;
+float feedforward;
 
 static void GimbalStateSet()
 {
+    feedforward = Cal_FollowControl_Feedforward(*gimbal_IMU_data, gimbal_cmd_recv);
+    yaw_ref= Cal_FollowControl_Set(*gimbal_IMU_data,gimbal_cmd_recv);
+
     switch (gimbal_cmd_recv.gimbal_mode)
     {
     // 停止
@@ -102,7 +100,8 @@ static void GimbalStateSet()
         break;
     case GIMBAL_GYRO_MODE: 
         DJIMotorEnable(yaw_motor);
-        DJIMotorSetRef(yaw_motor,gimbal_cmd_recv.yaw);
+        DJIMotorSetRef(yaw_motor, yaw_ref);
+        DJIMotorSetSpeedFeedForward(yaw_motor, feedforward);
         MI_motor_LocationControl(pitch_motor,gimbal_cmd_recv.pitch,pitch_motor->motor_controller.angle_PID.Kp,pitch_motor->motor_controller.angle_PID.Kd);
         if(motor_init==0)
         {
@@ -129,6 +128,7 @@ static void SendGimbalData()
 {
     gimbal_feedback_data.gimbal_imu_data = *gimbal_IMU_data;
     gimbal_feedback_data.yaw_motor_single_round_angle = yaw_motor->measure.angle_single_round;
+    gimbal_feedback_data.pitch_angle = pitch_motor->measure.angle;
 }
 
 /* 机器人云台控制核心任务 */
@@ -136,6 +136,8 @@ void GimbalTask()
 {
     // 获取云台控制数据
     SubGetMessage(gimbal_sub, &gimbal_cmd_recv);
+
+
     //云台启停
     GimbalStateSet();
     // 设置反馈数据,主要是imu和yaw的ecd
@@ -143,3 +145,19 @@ void GimbalTask()
     // 推送消息
     PubPushMessage(gimbal_pub, (void *)&gimbal_feedback_data);
 }
+
+
+
+        // // xQueueSend(gimbal_feedback_queue, &gimbal_fetch_data, 0);
+        // switch (gimbal_cmd_recv.gimbal_mode)
+        // {
+        //     // 停止
+        //     case GIMBAL_ZERO_FORCE:
+        //         DJIMotorStop(yaw_motor);
+        //         DJIMotorStop(pitch_motor);
+
+        //         break;
+        //     // 使用陀螺仪的反馈,底盘根据yaw电机的offset跟随云台或视觉模式采用
+        //     case GIMBAL_GYRO_MODE: // 后续只保留此模式
+        //         DJIMotorEnable(yaw_motor);
+        //         DJIMotorEnable(pitch_motor);

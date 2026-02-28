@@ -112,4 +112,6 @@ void DJIMotorEnable(DJIMotorInstance *motor);
  */
 void DJIMotorOuterLoop(DJIMotorInstance *motor, Closeloop_Type_e outer_loop);
 
+void DJIMotorSetSpeedFeedForward(DJIMotorInstance *motor, float feedforward);
+
 #endif // !DJI_MOTOR_H

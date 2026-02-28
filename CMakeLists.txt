@@ -20,9 +20,9 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# 强制将 compile_commands.json 复制到项目根目录,需要ctrl+shift+p重启clangd语言服务器
-file(COPY "${CMAKE_BINARY_DIR}/compile_commands.json"
-     DESTINATION "${CMAKE_SOURCE_DIR}")
+# # # 强制将 compile_commands.json 复制到项目根目录,需要ctrl+shift+p重启clangd语言服务器
+# file(COPY "${CMAKE_BINARY_DIR}/compile_commands.json"
+#      DESTINATION "${CMAKE_SOURCE_DIR}")
 
 
 # Define the build type
@@ -122,6 +122,7 @@ USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/chassis)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/cmd)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/gimbal)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/shoot)
+USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/gimbal_algorithm)
 
 
 # Link directories setup

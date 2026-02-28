@@ -2,7 +2,9 @@
 #include "seasky_protocol.h"
 #include "crc8.h"
 #include "crc16.h"
+#include "crc_ref.h"
 #include "memory.h"
+#include <string.h>
 
 static Minipc_Recv_s minipc_recv_data;
 static Minipc_Send_s minipc_send_data;
@@ -67,12 +69,12 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     static uint16_t crc16;
     static uint16_t data_len;
 
-    data_len =  2;
+    // data_len =  2;
     /*帧头部分*/
-    tx_buf[0] = SEND_VISION_ID;
+    // tx_buf[0] = SEND_VISION_ID;
     /*数据段*/
-    tx_buf[1] =tx_data->Vision.detect_color;
-    *tx_buf_len = data_len ;
+    // tx_buf[1] =tx_data->Vision.detect_color;
+    // *tx_buf_len = data_len ;
     //tx_buf[1] = data_len & 0xff;        // 低位在前
     //tx_buf[2] = (data_len >> 8) & 0xff; // 低位在前
     //tx_buf[3] = crc_8(&tx_buf[0], 3);   // 获取CRC8校验位
@@ -95,6 +97,13 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     //crc16 = crc_16(&tx_buf[0], data_len + 6);
     //tx_buf[data_len + 6] = crc16 & 0xff;
     //tx_buf[data_len + 7] = (crc16 >> 8) & 0xff;
+    tx_buf[0] = SEND_VISION_ID;
+	memcpy(&tx_buf[1], &tx_data->Vision.detect_color, 1);
+    memcpy( &tx_buf[2],&tx_data->Vision.roll, 4);
+    memcpy( &tx_buf[6],&tx_data->Vision.pitch, 4);
+    memcpy( &tx_buf[10],&tx_data->Vision.yaw, 4);
+    Append_CRC16_Check_Sum(&tx_buf[0],16);
+    *tx_buf_len = 16;
 
 }
 
@@ -109,17 +118,50 @@ void get_protocol_info_vision(uint8_t *rx_buf,
     static protocol_rm_struct pro;
     static uint16_t date_length;
 
-    if (protocol_heade_Check(&pro, rx_buf)==1) 
-    {
-        date_length = OFFSET_BYTE + pro.header.data_length;
-        //if (CRC16_Check_Sum(rx_buf, date_length)) {
-            *flags_register = (rx_buf[7] << 8) | rx_buf[6];
+    // if (protocol_heade_Check(&pro, rx_buf)==1) 
+    // {
+    //     date_length = OFFSET_BYTE + pro.header.data_length;
+    //     //if (CRC16_Check_Sum(rx_buf, date_length)) {
+    //         *flags_register = (rx_buf[7] << 8) | rx_buf[6];
 
-            // 将接收到的数据复制到Minipc_Recv_s结构体中
-            recv_data->Vision.header = rx_buf[0];
-            memcpy(&recv_data->Vision.yaw, &rx_buf[1], sizeof(float));
-            memcpy(&recv_data->Vision.pitch, &rx_buf[5], sizeof(float));
-            memcpy(&recv_data->Vision.deep, &rx_buf[9], sizeof(float));
-            recv_data->Vision.checksum = (rx_buf[date_length - 2] << 8) | rx_buf[date_length - 1];
-    }
+    //         // 将接收到的数据复制到Minipc_Recv_s结构体中
+    //         recv_data->Vision.header = rx_buf[0];
+    //         memcpy(&recv_data->Vision.yaw, &rx_buf[1], sizeof(float));
+    //         memcpy(&recv_data->Vision.pitch, &rx_buf[5], sizeof(float));
+    //         memcpy(&recv_data->Vision.deep, &rx_buf[9], sizeof(float));
+    //         recv_data->Vision.checksum = (rx_buf[date_length - 2] << 8) | rx_buf[date_length - 1];
+    // // }
+//     if(CRC16_Check_Sum(rx_buf, Minipc_Recv_sIZE) && rx_buf[Minipc_Recv_sIZE]== NAV_PROTOCOL_END_ID && rx_buf[0]== NAV_PROTOCOL_START_ID)
+//     {
+//         recv_data->NAV.header = rx_buf[0];
+//         recv_data->NAV.gimbal_mode = rx_buf[9];
+//         recv_data->NAV.fire_judge = rx_buf[15];
+//         memcpy(&recv_data->NAV.line_vx, &rx_buf[1], sizeof(float));
+//         memcpy(&recv_data->NAV.line_vy, &rx_buf[5], sizeof(float));
+//         memcpy(&recv_data->NAV.yaw, &rx_buf[9], sizeof(float));
+//         memcpy(&recv_data->NAV.pitch, &rx_buf[13], sizeof(float));
+//         recv_data->Vision.detect_color = rx_buf[1];
+// // 检查帧头
+// }
+        if (rx_buf[0] != SEND_VISION_ID) 
+        {
+            // return 0;
+        }
+        else {
+            memcpy(&recv_data->header, &rx_buf[0], 1);
+            memcpy(&recv_data->Vision.pitch, &rx_buf[1], 4);
+            memcpy(&recv_data->Vision.yaw, &rx_buf[5], 4);
+            memcpy(&recv_data->Vision.shoot_flag, &rx_buf[9], 1);
+            memcpy(&recv_data->Vision.time, &rx_buf[10], 4);
+//         recv_data->NAV.gimbal_mode = rx_buf[9];
+//         recv_data->NAV.fire_judge = rx_buf[15];
+//         memcpy(&recv_data->NAV.line_vx, &rx_buf[1], sizeof(float));
+//         memcpy(&recv_data->NAV.line_vy, &rx_buf[5], sizeof(float));
+//         memcpy(&recv_data->NAV.yaw, &rx_buf[9], sizeof(float));
+//         memcpy(&recv_data->NAV.pitch, &rx_buf[13], sizeof(float));
+        }
+
+        // return 1; // 解析成功
+    // }
+
 }

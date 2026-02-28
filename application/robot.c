@@ -28,7 +28,7 @@ void RobotInit()
     GimbalInit();
     // ShootInit();
 
-   ChassisInit();
+//    ChassisInit();
 
     OSTaskInit(); // 创建基础任务
 
@@ -42,5 +42,5 @@ void RobotTask()
     RobotCMDTask();
     GimbalTask();
     // ShootTask();
-    ChassisTask();
+    // ChassisTask();
 }

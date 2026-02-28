@@ -230,6 +230,11 @@ void DJIMotorSetRef(DJIMotorInstance *motor, float ref)
 {
     motor->motor_controller.pid_ref = ref;
 }
+void DJIMotorSetSpeedFeedForward(DJIMotorInstance *motor, float feedforward)
+{
+    *motor->motor_controller.speed_feedforward_ptr = feedforward;
+}
+
 
 // 为所有电机实例计算三环PID,发送控制报文
 void DJIMotorControl()

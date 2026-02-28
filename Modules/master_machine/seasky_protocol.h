@@ -7,6 +7,13 @@
 #define PROTOCOL_CMD_ID 0x5A
 #define SEND_VISION_ID 0xA5
 
+
+#define NAV_PROTOCOL_START_ID  0XA5
+#define NAV_PROTOCOL_END_ID  0X2B
+#define SEND_NAV_PROTOCOL_SEND_ID  
+#define SEND_NAV_PROTOCOL_END_ID
+
+
 #define OFFSET_BYTE 8 // 出数据段外，其他部分所占字节数
 
 typedef struct

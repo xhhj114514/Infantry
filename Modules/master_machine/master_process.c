@@ -1,4 +1,5 @@
 #include "master_process.h"
+#include "QuaternionEKF.h"
 #include "seasky_protocol.h"
 #include "daemon.h"
 #include "bsp_log.h"
@@ -10,9 +11,31 @@ static DaemonInstance *minipc_daemon_instance;
 
 void VisionSetFlag(uint8_t color)
 {
-    minipc_send_data.Vision.detect_color=color;
+    // minipc_send_data.Vision.detect_color=color;
 }
 
+void NAV_SEND(float vx, float vy, float yaw,uint8_t occupation,uint8_t detect_color)
+{
+// minipc_send_data.header=NAV_PROTOCOL_START_ID;
+// minipc_send_data.NAV.line_vx=vx;
+// minipc_send_data.NAV.line_vy=vy;
+// minipc_send_data.NAV.yaw=yaw;
+
+// if (self_sentry_HP>500)
+// {
+// self_sentry_HP=500;
+// }
+// minipc_send_data.NAV.self_sentry_HP=self_sentry_HP;
+// minipc_send_data.NAV.self_infantry_HP=self_infantry_HP;
+// minipc_send_data.NAV.self_hero_HP=self_hero_HP;
+
+// minipc_send_data.NAV.remain_time=remain_time;  // 比赛剩余时间
+// minipc_send_data.NAV.remain_bullet=remain_bullet;
+// minipc_send_data.NAV.occupation =occupation;   // 区域占领状态
+// minipc_send_data.NAV.game_progress=game_progress;
+// minipc_send_data.NAV.ender=NAV_PROTOCOL_END_ID;
+// minipc_send_data.Vision.detect_color=detect_color;
+}
 void VisionSetAltitude()
 {
     minipc_send_data.Vision.pitch = QEKF_INS.Pitch;
@@ -88,11 +111,13 @@ void SendMinipcData()
     static uint8_t send_buff[Minipc_Send_sIZE];
     static uint16_t tx_len;
     // TODO: code to set flag_register
-    flag_register = 30 << 8 | 0b00000001;
+    // flag_register = 30 << 8 | 0b00000001;
     // 将数据转化为seasky协议的数据包
     get_protocol_send_Vision_data(0x02, flag_register, &minipc_send_data, 1, send_buff, &tx_len);
+
     VisionSetAltitude();
-    USARTSend(minipc_usart_instance, send_buff, tx_len, USART_TRANSFER_DMA); // 和视觉通信使用IT,防止和接收使用的DMA冲突
+    // NAV_SEND();
+    USARTSend(minipc_usart_instance, send_buff, tx_len, USART_TRANSFER_IT); // 和视觉通信使用IT,防止和接收使用的DMA冲突
     // 此处为HAL设计的缺陷,DMASTOP会停止发送和接收,导致再也无法进入接收中断.
     // 也可在发送完成中断中重新启动DMA接收,但较为复杂.因此,此处使用IT发送.
     // 若使用了daemon,则也可以使用DMA发送.

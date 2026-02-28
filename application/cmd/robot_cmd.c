@@ -76,7 +76,6 @@ void RobotCMDInit()
     aim_success_buzzer= BuzzerRegister(&aim_success_buzzer_config);
 
 
-
 }
 
 
@@ -125,53 +124,53 @@ static void GimbalPitchLimit()
  */
 static void VisionJudge()
 {
-    //cnt1用于检测小电脑的离线，取值为[-1,1]
-    //在-0.1到1且小电脑未离线时，读取深度
-    cnt1=sin(DWT_GetTimeline_s());
-    if(cnt1>-0.1&&cnt1<1&&DataLebel.cmd_error_flag==0)
-    {
-        gimbal_cmd_send.last_deep= minipc_recv_data->Vision.deep;
-    }
-    //有深度代表有视觉信息
-    if(minipc_recv_data->Vision.deep!=0&&DataLebel.cmd_error_flag==0)//代表收到信息
-    {
-        DataLebel.aim_flag=1;
-        //检测到装甲板，开启蜂鸣器
-        AlarmSetStatus(aim_success_buzzer, ALARM_ON);
-        //与装甲板中心的距离越近，蜂鸣器越响
-        if(abs(minipc_recv_data->Vision.yaw)>1&&aim_success_buzzer->loudness<0.5)
-        {
-            aim_success_buzzer->loudness=0.5*(1/abs(minipc_recv_data->Vision.yaw));
-        }
-        else if(abs(minipc_recv_data->Vision.yaw)<1 && abs(minipc_recv_data->Vision.pitch)<1)
-        {
-            //离装甲板距离较近时，开火
-            aim_success_buzzer->loudness=0.5;
-            if(DataLebel.reverse_flag==1)
-            {
-                DataLebel.fire_flag=0;
-            }
-            else
-            {
-                DataLebel.fire_flag=1;
-            }
-        }
-        //在cnt1<-0.2时，此时不读取深度，但如果之前读取到的深度与实际深度一致，证明小电脑离线，停止自瞄
-        if(minipc_recv_data->Vision.deep-gimbal_cmd_send.last_deep==0&&cnt1<-0.2)
-        {
-            DataLebel.cmd_error_flag=1;
-            DataLebel.fire_flag=0;
-            DataLebel.aim_flag=0;
-            AlarmSetStatus(aim_success_buzzer, ALARM_OFF);
-        }
-    }
-     //检测不到装甲板，关蜂鸣器，关火
-    else if(minipc_recv_data->Vision.deep==0 && DataLebel.aim_flag==1)       
-    {
-        DataLebel.fire_flag=0;
-        DataLebel.aim_flag=0;
-        AlarmSetStatus(aim_success_buzzer, ALARM_OFF);    
-    }
+    // //cnt1用于检测小电脑的离线，取值为[-1,1]
+    // //在-0.1到1且小电脑未离线时，读取深度
+    // cnt1=sin(DWT_GetTimeline_s());
+    // if(cnt1>-0.1&&cnt1<1&&DataLebel.cmd_error_flag==0)
+    // {
+    //     gimbal_cmd_send.last_deep= minipc_recv_data->Vision.deep;
+    // }
+    // //有深度代表有视觉信息
+    // if(minipc_recv_data->Vision.deep!=0&&DataLebel.cmd_error_flag==0)//代表收到信息
+    // {
+    //     DataLebel.aim_flag=1;
+    //     //检测到装甲板，开启蜂鸣器
+    //     AlarmSetStatus(aim_success_buzzer, ALARM_ON);
+    //     //与装甲板中心的距离越近，蜂鸣器越响
+    //     if(abs(minipc_recv_data->Vision.yaw)>1&&aim_success_buzzer->loudness<0.5)
+    //     {
+    //         aim_success_buzzer->loudness=0.5*(1/abs(minipc_recv_data->Vision.yaw));
+    //     }
+    //     else if(abs(minipc_recv_data->Vision.yaw)<1 && abs(minipc_recv_data->Vision.pitch)<1)
+    //     {
+    //         //离装甲板距离较近时，开火
+    //         aim_success_buzzer->loudness=0.5;
+    //         if(DataLebel.reverse_flag==1)
+    //         {
+    //             DataLebel.fire_flag=0;
+    //         }
+    //         else
+    //         {
+    //             DataLebel.fire_flag=1;
+    //         }
+    //     }
+    //     //在cnt1<-0.2时，此时不读取深度，但如果之前读取到的深度与实际深度一致，证明小电脑离线，停止自瞄
+    //     if(minipc_recv_data->Vision.deep-gimbal_cmd_send.last_deep==0&&cnt1<-0.2)
+    //     {
+    //         DataLebel.cmd_error_flag=1;
+    //         DataLebel.fire_flag=0;
+    //         DataLebel.aim_flag=0;
+    //         AlarmSetStatus(aim_success_buzzer, ALARM_OFF);
+    //     }
+    // }
+    //  //检测不到装甲板，关蜂鸣器，关火
+    // else if(minipc_recv_data->Vision.deep==0 && DataLebel.aim_flag==1)       
+    // {
+    //     DataLebel.fire_flag=0;
+    //     DataLebel.aim_flag=0;
+    //     AlarmSetStatus(aim_success_buzzer, ALARM_OFF);    
+    // }
 }
 
 static void BasicSet()
@@ -184,6 +183,7 @@ static void BasicSet()
     shoot_cmd_send.friction_mode = FRICTION_ON;
     shoot_cmd_send.shoot_rate=8;
     chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
+
 }
 
 
@@ -191,18 +191,31 @@ static void GimbalRC()
 {
     gimbal_cmd_send.yaw -= 0.0045f * (float)rc_data[TEMP].rc.rocker_right_x;//0.0005f * (float)rc_data[TEMP].rc.rocker_right_x
     gimbal_cmd_send.pitch -= 0.00005f * (float)rc_data[TEMP].rc.rocker_right_y;
-    gimbal_cmd_send.real_pitch= ((gimbal_fetch_data.gimbal_imu_data.Pitch)-gimbal_fetch_data.init_location)/57.39;
+    gimbal_cmd_send.real_pitch = ((gimbal_fetch_data.gimbal_imu_data.Pitch)-gimbal_fetch_data.init_location)/57.39;
 }
 
 static void GimbalAC()
 {
-    gimbal_cmd_send.yaw-=0.007f*minipc_recv_data->Vision.yaw;   //往右获得的yaw是减
-    gimbal_cmd_send.pitch -= 0.009f*minipc_recv_data->Vision.pitch;
+    gimbal_cmd_send.yaw = gimbal_fetch_data.gimbal_imu_data.YawTotalAngle - minipc_recv_data->Vision.yaw;   //往右获得的yaw是减
+    gimbal_cmd_send.pitch = gimbal_fetch_data.pitch_angle - 0.2*minipc_recv_data->Vision.pitch*DEGREE_2_RAD;
 }
-
 
 static void ChassisRC()
 {
+    chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
+    chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
+
+    if (switch_is_down(rc_data[TEMP].rc.switch_left))
+    {
+        chassis_cmd_send.chassis_mode=CHASSIS_FOLLOW_GIMBAL_YAW;
+    }
+    else
+        chassis_cmd_send.chassis_mode=CHASSIS_ROTATE;
+}
+
+static void ChassisAC()
+{
+    NAV_SEND();
     chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
     chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
 
@@ -270,6 +283,7 @@ static void ShootRC()
 static void RemoteControlSet()
 {
     ChassisRC();
+    GimbalAC();
     if(switch_is_up(rc_data[TEMP].rc.switch_left)) 
     {
         AutoAimSet();
@@ -277,7 +291,7 @@ static void RemoteControlSet()
         {
             gimbal_cmd_send.autoaim_mode=AUTO_ON;
             ShootRC();
-            GimbalRC();
+            // GimbalRC();
         }
         else
         {
@@ -287,7 +301,7 @@ static void RemoteControlSet()
     else
     {
         gimbal_cmd_send.autoaim_mode=AUTO_OFF;
-        GimbalRC();
+        // GimbalRC();
         ShootRC();
     }
 }
@@ -493,11 +507,11 @@ static void EnemyJudge()
 {
     if(referee_data->GameRobotState.robot_id>7)
     {
-        minipc_send_data.Vision.detect_color = COLOR_RED;
+        // minipc_send_data.Vision.detect_color = COLOR_RED;
     }
     else
     {
-        minipc_send_data.Vision.detect_color = COLOR_BLUE;
+        // minipc_send_data.Vision.detect_color = COLOR_BLUE;
     }
 }
 static void SendToUIData()
