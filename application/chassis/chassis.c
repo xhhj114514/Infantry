@@ -7,6 +7,9 @@
 #include "bsp_dwt.h"
 #include "arm_math.h"
 
+#include "rm_referee.h"
+#include "referee_task.h"
+
 /* 根据robot_def.h中的macro自动计算的参数 */
 #define HALF_WHEEL_BASE (WHEEL_BASE / 2.0f)     // 半轴距
 #define HALF_TRACK_WIDTH (TRACK_WIDTH / 2.0f)   // 半轮距
@@ -30,7 +33,9 @@ static float t;
 /* 私有函数计算的中介变量,设为静态避免参数传递的开销 */
 static float chassis_vx, chassis_vy;     // 将云台系的速度投影到底盘
 static float vt_lf, vt_rf, vt_lb, vt_rb; // 底盘速度解算后的临时输出,待进行限幅
-
+static Cal_Chassis_Info_t chassis_info;                             // 底盘速度计算信息
+static Referee_Interactive_info_t ui_data;              // UI数据，将底盘中的数据传入此结构体的对应变量中，UI会自动检测是否变化，对应显示UI
+static referee_info_t* referee_data;                    // 用于获取裁判系统的数据
 void ChassisInit()
 {
     Motor_Init_Config_s chassis_motor_config = {
@@ -157,6 +162,96 @@ static void LimitChassisOutput()
     DJIMotorSetRef(motor_rf, vt_rf);
     DJIMotorSetRef(motor_lb, vt_lb);
     DJIMotorSetRef(motor_rb, vt_rb);
+}
+
+/*****************************************SendData********************************************/
+/*
+measure.speed_aps`是电机未经过减速箱的速度，
+所以要除以减速箱系数`REDUCTION_RATIO_WHEEL`，
+四个轮子，所以将合速度除四（eg.假设四个轮子速度为10m/s，那么就是先将轮子速度叠加成40m/s，再除4，得到车体的速度是10m/s），
+/360（转成弧度制）*轮子周长（将角速度转换成线速度）除1000（将cm/s转换成m/s）。然后再得到底盘坐标系转换到云台坐标系上。（去年漏了这步）
+@brief 根据每个轮子的速度反馈,计算底盘的实际运动速度,逆运动解算，并发给巡航底盘实时数据             
+ */
+static void SendChassisData()
+{
+    //to  巡航   
+    // 步骤1：计算底盘坐标系下的速度（vx, vy）巡航
+    chassis_info.vx = (motor_lf->measure.speed_aps +motor_lb->measure.speed_aps - motor_rb->measure.speed_aps - motor_rf->measure.speed_aps) / 4.0f / REDUCTION_RATIO_WHEEL / 360.0f * PERIMETER_WHEEL/1000 ;
+    chassis_info.vy = (-motor_lf->measure.speed_aps +motor_lb->measure.speed_aps + motor_rb->measure.speed_aps - motor_rf->measure.speed_aps) / 4.0f / REDUCTION_RATIO_WHEEL / 360.0f * PERIMETER_WHEEL/1000  ;
+    // 步骤2：底盘坐标系→云台坐标系转换（关键步骤）
+    chassis_feedback_data.real_vx = chassis_info.vx * chassis_info.cos_theta + chassis_info.vy * chassis_info.sin_theta;
+    chassis_feedback_data.real_vy = -chassis_info.vx * chassis_info.sin_theta + chassis_info.vy * chassis_info.cos_theta;
+}
+
+// /**
+//  * @brief  将裁判系统的信息发给巡航、视觉让其进行决策。
+//  */
+// static void SendJudgeData()
+// {
+//     chassis_feedback_data.Occupation=(referee_data->EventData.event_type >> 21) & 0x03;
+//     chassis_feedback_data.remain_time=referee_data->GameState.stage_remain_time;
+//     chassis_feedback_data.game_progress=referee_data->GameState.game_progress;
+    
+//     if(referee_data->GameRobotState.robot_id>7)
+//     {
+//         chassis_feedback_data.enemy_color=COLOR_RED;
+
+//         chassis_feedback_data.remain_HP=referee_data->GameRobotHP.blue_7_robot_HP;
+//         chassis_feedback_data.self_hero_HP=referee_data->GameRobotHP.blue_1_robot_HP;
+//         chassis_feedback_data.self_infantry_HP=referee_data->GameRobotHP.blue_3_robot_HP;
+
+//         chassis_feedback_data.enemy_hero_HP=referee_data->GameRobotHP.red_1_robot_HP;
+//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.red_3_robot_HP;
+//         chassis_feedback_data.enemy_sentry_HP=referee_data->GameRobotHP.red_7_robot_HP;
+//     }
+//     else
+//     {
+//         chassis_feedback_data.enemy_color=COLOR_BLUE;
+//         chassis_feedback_data.remain_HP=referee_data->GameRobotHP.red_7_robot_HP;
+//         chassis_feedback_data.self_hero_HP=referee_data->GameRobotHP.red_1_robot_HP;
+//         chassis_feedback_data.self_infantry_HP=referee_data->GameRobotHP.red_3_robot_HP;
+
+//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.blue_1_robot_HP;
+//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.blue_3_robot_HP;
+//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.blue_7_robot_HP;
+//     }   
+//     chassis_feedback_data.left_bullet_heat= referee_data->PowerHeatData.shooter_17mm_2_barrel_heat;
+//     chassis_feedback_data.right_bullet_heat= referee_data->PowerHeatData.shooter_17mm_1_barrel_heat;
+//     chassis_feedback_data.bullet_num=referee_data->ProjectileAllowance.projectile_allowance_17mm;
+//     chassis_feedback_data.bullet_speed=referee_data->ShootData.bullet_speed;
+// }
+
+static void SendJudgeData()
+{
+        // 没有装甲板数据时使用裁判系统数据
+        chassis_feedback_data.Occupation = (referee_data->EventData.event_type >> 21) & 0x03;
+        chassis_feedback_data.remain_time = referee_data->GameState.stage_remain_time;
+        chassis_feedback_data.game_progress = referee_data->GameState.game_progress;
+        
+        if(referee_data->GameRobotState.robot_id > 7) {
+            chassis_feedback_data.enemy_color = COLOR_RED;
+            chassis_feedback_data.remain_HP = referee_data->GameRobotHP.blue_7_robot_HP;
+            chassis_feedback_data.self_hero_HP = referee_data->GameRobotHP.blue_1_robot_HP;
+            chassis_feedback_data.self_infantry_HP = referee_data->GameRobotHP.blue_3_robot_HP;
+            chassis_feedback_data.enemy_hero_HP = referee_data->GameRobotHP.red_1_robot_HP;
+            chassis_feedback_data.enemy_infantry_HP = referee_data->GameRobotHP.red_3_robot_HP;
+            chassis_feedback_data.enemy_sentry_HP = referee_data->GameRobotHP.red_7_robot_HP;
+        } 
+        else
+        {
+            chassis_feedback_data.enemy_color = COLOR_BLUE;
+            chassis_feedback_data.remain_HP = referee_data->GameRobotHP.red_7_robot_HP;
+            chassis_feedback_data.self_hero_HP = referee_data->GameRobotHP.red_1_robot_HP;
+            chassis_feedback_data.self_infantry_HP = referee_data->GameRobotHP.red_3_robot_HP;
+            chassis_feedback_data.enemy_hero_HP = referee_data->GameRobotHP.blue_1_robot_HP;
+            chassis_feedback_data.enemy_infantry_HP = referee_data->GameRobotHP.blue_3_robot_HP;
+            chassis_feedback_data.enemy_sentry_HP = referee_data->GameRobotHP.blue_7_robot_HP;
+        }
+    // 以下数据始终从裁判系统获取
+    chassis_feedback_data.left_bullet_heat = referee_data->PowerHeatData.shooter_17mm_2_barrel_heat;
+    chassis_feedback_data.right_bullet_heat = referee_data->PowerHeatData.shooter_17mm_1_barrel_heat;
+    chassis_feedback_data.bullet_num = referee_data->ProjectileAllowance.projectile_allowance_17mm;
+    chassis_feedback_data.bullet_speed = referee_data->ShootData.bullet_speed;
 }
 
 /* 机器人底盘控制核心任务 */

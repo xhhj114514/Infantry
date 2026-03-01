@@ -92,19 +92,37 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     //{
     //    tx_buf[i + 8] = ((uint8_t *)(&tx_data[i / 4]))[i % 4];
     //}
-
+    tx_data->Vision.vx = 1.14;
+    tx_data->Vision.vy = 51.4;
+    tx_data->Vision.sentry_hp = 114;
+    tx_data->Vision.infantry_hp = 514;
+    tx_data->Vision.match_progress = 100;
+    tx_data->Vision.hero_hp = 222;
+    tx_data->Vision.remain_time = 333;
+    tx_data->Vision.remain_bullet = 444;
     /*整包校验*/
     //crc16 = crc_16(&tx_buf[0], data_len + 6);
     //tx_buf[data_len + 6] = crc16 & 0xff;
-    //tx_buf[data_len + 7] = (crc16 >> 8) & 0xff;
+    //tx_buf[data_len + 7] = (crc16 >> 8) & 0xff;// 2+20+10+2
     tx_buf[0] = SEND_VISION_ID;
 	memcpy(&tx_buf[1], &tx_data->Vision.detect_color, 1);
     memcpy( &tx_buf[2],&tx_data->Vision.roll, 4);
     memcpy( &tx_buf[6],&tx_data->Vision.pitch, 4);
     memcpy( &tx_buf[10],&tx_data->Vision.yaw, 4);
-    Append_CRC16_Check_Sum(&tx_buf[0],16);
-    *tx_buf_len = 16;
+    memcpy( &tx_buf[14],&tx_data->Vision.vx, 4);
+    memcpy( &tx_buf[18],&tx_data->Vision.vy, 4);
 
+    memcpy( &tx_buf[22],&tx_data->Vision.sentry_hp, 2);
+    memcpy( &tx_buf[24],&tx_data->Vision.hero_hp, 2);
+    memcpy( &tx_buf[26],&tx_data->Vision.infantry_hp, 2);
+
+    memcpy( &tx_buf[28],&tx_data->Vision.remain_time, 2);
+    memcpy( &tx_buf[30],&tx_data->Vision.remain_bullet, 2);
+    memcpy( &tx_buf[32],&tx_data->Vision.match_progress, 1);
+    memcpy( &tx_buf[33],&tx_data->Vision.occupation, 1);
+
+    Append_CRC16_Check_Sum(&tx_buf[0],36);
+    *tx_buf_len = 36;
 }
 
 /*
@@ -149,10 +167,17 @@ void get_protocol_info_vision(uint8_t *rx_buf,
         }
         else {
             memcpy(&recv_data->header, &rx_buf[0], 1);
-            memcpy(&recv_data->Vision.pitch, &rx_buf[1], 4);
-            memcpy(&recv_data->Vision.yaw, &rx_buf[5], 4);
-            memcpy(&recv_data->Vision.shoot_flag, &rx_buf[9], 1);
-            memcpy(&recv_data->Vision.time, &rx_buf[10], 4);
+            memcpy(&recv_data->Vision.linevx, &rx_buf[1], 4);
+            memcpy(&recv_data->Vision.linevy, &rx_buf[5], 4);
+            memcpy(&recv_data->Vision.gimbal_mode, &rx_buf[9], 1);
+            memcpy(&recv_data->Vision.yaw, &rx_buf[10], 4);
+            memcpy(&recv_data->Vision.pitch, &rx_buf[14], 4);
+            memcpy(&recv_data->Vision.shoot_flag, &rx_buf[18], 1);
+            // memcpy(&recv_data->header, &rx_buf[0], 1);
+            // memcpy(&recv_data->Vision.pitch, &rx_buf[1], 4);
+            // memcpy(&recv_data->Vision.yaw, &rx_buf[5], 4);
+            // memcpy(&recv_data->Vision.shoot_flag, &rx_buf[9], 1);
+            // memcpy(&recv_data->Vision.time, &rx_buf[10], 4);
 //         recv_data->NAV.gimbal_mode = rx_buf[9];
 //         recv_data->NAV.fire_judge = rx_buf[15];
 //         memcpy(&recv_data->NAV.line_vx, &rx_buf[1], sizeof(float));

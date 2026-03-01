@@ -58,10 +58,11 @@ typedef enum
  */
 typedef enum
 {
-    CHASSIS_ZERO_FORCE = 0,    // 电流零输入
-    CHASSIS_ROTATE,            // 小陀螺模式
-    CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
-    CHASSIS_FOLLOW_GIMBAL_YAW, // 跟随模式，底盘叠加角度环控制
+    CHASSIS_ZERO_FORCE = 0,        // 底盘力控关闭模式
+    CHASSIS_ROTATE,                 // 小陀螺自旋模式
+    CHASSIS_NAV,                    // 自主导航模式
+    CHASSIS_NO_FOLLOW,              // 全向平移模式(不跟随云台)
+    CHASSIS_FOLLOW_GIMBAL_YAW,      // 云台跟随模式
 } chassis_mode_e;
 
 // 云台模式设置
@@ -111,12 +112,75 @@ typedef struct
     float t_shoot;
     float t_pitch;
     float t_cmd_error;
+    
+    uint8_t vision_flag;  // 视觉系统工作标志
     uint8_t aim_flag;
     uint8_t shoot_flag;
     uint8_t cmd_error_flag;
     uint8_t fire_flag;
     uint8_t reverse_flag;
 }DataLebel_t;
+
+/**
+ * @brief 热量计算结构（发射机构用）
+ */
+typedef struct {
+    uint16_t shoot_heat_l;  // 左枪管实时热量(计算值)
+    uint16_t shoot_heat_r;  // 右枪管实时热量(计算值)
+    uint8_t shoot_l;        // 左枪管发射状态(0/1)
+    uint8_t shoot_r;        // 右枪管发射状态(0/1)
+} cal_heat_t;
+
+/**
+ * @brief 底盘速度解算中间变量
+ */
+typedef struct {
+    float chassis_vx;     // X轴底盘速度(m/s)
+    float chassis_vy;     // Y轴底盘速度(m/s)
+    float vt_lf;          // 左前轮目标速度
+    float vt_rf;          // 右前轮目标速度
+    float vt_lb;          // 左后轮目标速度
+    float vt_rb;          // 右后轮目标速度
+    float sin_theta;      // 角度正弦值(运动学解算用)
+    float cos_theta;      // 角度余弦值(运动学解算用)
+    float vx;             // 临时计算变量X
+    float vy;             // 临时计算变量Y
+    float cnt;            // 计数器/中间变量
+} Cal_Chassis_Info_t;
+
+/**
+ * @brief 中场巡航控制参数
+ */
+typedef struct {
+    uint8_t flag;               // 巡航启用标志
+    float yaw_init;             // 巡航起始角度
+    float yaw_total_angle;     // 云台累计转角
+    float yaw;                  // 当前目标偏航角
+    int direction;              // 扫描方向(1:顺时针 -1:逆时针) 
+    uint8_t Power_Out;         // 掉线保护标志
+} cal_mid_round_patrol_t;
+
+/**
+ * @brief 全场巡航控制参数
+ */
+typedef struct {
+    int32_t init_totol_round;   // 初始全场圈数
+    int32_t total_round;        // 当前总巡航圈数
+    uint8_t flag;               // 巡航状态标志
+    float yaw_init;             // 起始基准角度
+} cal_round_patrol_t;
+
+/**
+ * @brief 临时巡航控制参数
+ */
+typedef struct {
+    uint8_t flag;               // 临时巡航启用标志
+    uint16_t num;               // 扫描次数计数
+    float yaw_init;             // 临时巡航起始角
+    float yaw;                  // 当前目标偏航角
+    int direction;              // 扫描方向
+} cal_temporary_round_patrol_t;
+
 
 /* ----------------CMD应用发布的控制数据,应当由gimbal/chassis/shoot订阅---------------- */
 /**
@@ -170,6 +234,26 @@ typedef struct
     Enemy_Color_e enemy_color;   // 1 for blue, 0 for red
     uint16_t robot_level;
     uint8_t power_flag;
+
+    float real_vx;               // 实际X轴速度
+    float real_vy;               // 实际Y轴速度
+    uint16_t remain_HP;          // 机器人剩余血量
+    uint16_t self_hero_HP;       // 己方英雄血量
+    uint16_t self_infantry_HP;   // 己方步兵血量
+    uint16_t enemy_hero_HP;      // 敌方英雄血量
+    uint16_t enemy_sentry_HP;    // 敌方哨兵血量
+    uint16_t enemy_infantry_HP;  // 敌方步兵血量
+    uint16_t remain_time;        // 比赛剩余时间
+    uint8_t Occupation;          // 场地占领状态
+    uint8_t game_progress;       // 比赛阶段
+    
+    // 发射机构用数据
+    uint8_t rest_heat;           // 剩余枪口热量(裁判系统值)
+    uint16_t bullet_num;         // 剩余子弹数
+    uint16_t left_bullet_heat;   // 左枪管热量
+    uint16_t right_bullet_heat;  // 右枪管热量
+    uint16_t bullet_speed;       // 当前子弹速度
+    uint16_t Death_flag;         // 死亡标志(0:存活 1:死亡)
 } Chassis_Upload_Data_s;
 
 
@@ -180,6 +264,8 @@ typedef struct
     float pitch_angle;
     uint8_t cmd_error_flag;
     float init_location;
+    int32_t total_round;         // 云台总旋转圈数(带方向)
+    uint16_t yaw_total_angle;  // 云台总旋转角度(0-360°)
 } Gimbal_Upload_Data_s;
 
 typedef struct

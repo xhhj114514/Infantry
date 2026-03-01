@@ -14,28 +14,6 @@ void VisionSetFlag(uint8_t color)
     // minipc_send_data.Vision.detect_color=color;
 }
 
-void NAV_SEND(float vx, float vy, float yaw,uint8_t occupation,uint8_t detect_color)
-{
-// minipc_send_data.header=NAV_PROTOCOL_START_ID;
-// minipc_send_data.NAV.line_vx=vx;
-// minipc_send_data.NAV.line_vy=vy;
-// minipc_send_data.NAV.yaw=yaw;
-
-// if (self_sentry_HP>500)
-// {
-// self_sentry_HP=500;
-// }
-// minipc_send_data.NAV.self_sentry_HP=self_sentry_HP;
-// minipc_send_data.NAV.self_infantry_HP=self_infantry_HP;
-// minipc_send_data.NAV.self_hero_HP=self_hero_HP;
-
-// minipc_send_data.NAV.remain_time=remain_time;  // 比赛剩余时间
-// minipc_send_data.NAV.remain_bullet=remain_bullet;
-// minipc_send_data.NAV.occupation =occupation;   // 区域占领状态
-// minipc_send_data.NAV.game_progress=game_progress;
-// minipc_send_data.NAV.ender=NAV_PROTOCOL_END_ID;
-// minipc_send_data.Vision.detect_color=detect_color;
-}
 void VisionSetAltitude()
 {
     minipc_send_data.Vision.pitch = QEKF_INS.Pitch;

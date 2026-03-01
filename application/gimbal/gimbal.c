@@ -123,14 +123,23 @@ static void GimbalStateSet()
         break;
     }
 }
-
-
-
+/*****************************************FeedbackData*****************************************/
+/**
+ * @brief 发送反馈信息给终端
+ */
 static void SendGimbalData()
 {
     gimbal_feedback_data.gimbal_imu_data = *gimbal_IMU_data;
     gimbal_feedback_data.yaw_motor_single_round_angle = yaw_motor->measure.angle_single_round;
-    gimbal_feedback_data.pitch_angle = pitch_motor->measure.angle;
+    gimbal_feedback_data.total_round = yaw_motor->measure.total_round;
+}
+
+DJIMotorInstance* GetYawMotor(void) {
+    return yaw_motor;
+}
+
+MIMotorInstance* GetPitchMotor(void) {
+    return pitch_motor;
 }
 
 /* 机器人云台控制核心任务 */
@@ -149,17 +158,3 @@ void GimbalTask()
 }
 
 
-
-        // // xQueueSend(gimbal_feedback_queue, &gimbal_fetch_data, 0);
-        // switch (gimbal_cmd_recv.gimbal_mode)
-        // {
-        //     // 停止
-        //     case GIMBAL_ZERO_FORCE:
-        //         DJIMotorStop(yaw_motor);
-        //         DJIMotorStop(pitch_motor);
-
-        //         break;
-        //     // 使用陀螺仪的反馈,底盘根据yaw电机的offset跟随云台或视觉模式采用
-        //     case GIMBAL_GYRO_MODE: // 后续只保留此模式
-        //         DJIMotorEnable(yaw_motor);
-        //         DJIMotorEnable(pitch_motor);

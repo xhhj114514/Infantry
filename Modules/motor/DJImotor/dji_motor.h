@@ -48,6 +48,7 @@ typedef struct
     DaemonInstance* daemon;
     uint32_t feed_cnt;
     float dt;
+    uint8_t Power_out;
 } DJIMotorInstance;
 
 /**

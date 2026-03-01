@@ -108,7 +108,7 @@ int main(void)
   MX_TIM5_Init();
   MX_USART3_UART_Init();
   MX_RNG_Init();
-  MX_RTC_Init();
+  // MX_RTC_Init();
   MX_TIM1_Init();
   MX_TIM10_Init();
   MX_USART1_UART_Init();

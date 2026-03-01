@@ -42,21 +42,23 @@ typedef struct
 	uint8_t header;  // 帧头，固定为0x5A
 	struct
 	{
-		float pitch;
+		float linevx;
+		float linevy;
+		uint8_t gimbal_mode;
 		float yaw;
+		float pitch;
 		int8_t shoot_flag;
-		int32_t time;
+		// int32_t time;
 	}Vision;
 	// struct
 	// {
-	// 	uint8_t detect_color;
-	// 	float yaw;
-	// 	float pitch;
-	// 	float roll; 
-	// 	float line_vx;
-	// 	float line_vy;
-	// 	uint8_t gimbal_mode;
-	// 	uint8_t ender; //0X2B 
+                // header, 
+                // linear_velocity_x,
+                // linear_velocity_y, 
+                // gimbal_mode,
+                // yaw, 
+                // pitch, 
+                // can_fire, 
 	// }NAV;
 
 } __attribute__((packed)) Minipc_Recv_s;
@@ -83,17 +85,32 @@ typedef struct
 		float roll;
 		float pitch;
 		float yaw;
+		float vx;
+		float vy;
+		uint16_t sentry_hp;
+		uint16_t hero_hp;
+		uint16_t infantry_hp;
+		uint16_t remain_time;
+		uint16_t remain_bullet;
+		uint8_t match_progress;
+		uint8_t occupation;
 	}Vision;
 	// struct
 	// {
-	// 	uint8_t detect_color;
-	// 	float roll;
-	// 	float pitch;
-	// 	float gz; 
-	// 	float line_vx;
-	// 	float line_vy;
-	// 	uint8_t gimbal_mode;
-	// 	uint8_t ender; //0X2B 
+            // header = 0xA5          # 假设帧头是 0x5A (B)
+            // detect_color = 1       # 红色 (B)
+            // roll = 1.2             # (f)
+            // pitch = -0.5           # (f)
+            // yaw = 3.14             # (f)
+            // vx = 0.5               # (f)
+            // vy = 0.2               # (f)
+            // sentry_hp = 600        # (H)
+            // hero_hp = 1500         # (H)
+            // infantry_hp = 200      # (H)
+            // remain_time = 420      # (H)
+            // remain_bullet = 150    # (H)
+            // match_progress = 2     # (B)
+            // occupation = 0         # (B)
 	// }NAV;
 
 } __attribute__((packed)) Minipc_Send_s;

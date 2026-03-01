@@ -9,6 +9,8 @@
 #include "general_def.h"
 #include "dji_motor.h"
 #include "buzzer.h"
+
+#include "gimbal.h"
 #include "referee_UI.h"
 #include "referee_task.h"
 
@@ -53,6 +55,10 @@ static Referee_Interactive_info_t ui_data; // UI数据，将底盘中的数据�
 static float cnt1,cnt2; 
 static float chassis_rotate_buff;
 static float chassis_speed_buff;
+
+static cal_round_patrol_t round_patrol;
+static cal_mid_round_patrol_t mid_round_patrol;
+static cal_temporary_round_patrol_t tem_round_patrol;
 
 void RobotCMDInit()
 {
@@ -194,7 +200,7 @@ static void GimbalRC()
     gimbal_cmd_send.real_pitch = ((gimbal_fetch_data.gimbal_imu_data.Pitch)-gimbal_fetch_data.init_location)/57.39;
 }
 
-static void GimbalAC()
+static void INFANTRY_GimbalAC()
 {
     gimbal_cmd_send.yaw = gimbal_fetch_data.gimbal_imu_data.YawTotalAngle - minipc_recv_data->Vision.yaw;   //往右获得的yaw是减
     gimbal_cmd_send.pitch = gimbal_fetch_data.pitch_angle - 0.2*minipc_recv_data->Vision.pitch*DEGREE_2_RAD;
@@ -213,15 +219,83 @@ static void ChassisRC()
         chassis_cmd_send.chassis_mode=CHASSIS_ROTATE;
 }
 
+static void GetGimbalInitImu()
+{
+    if (mid_round_patrol.flag == 0)
+    {
+        mid_round_patrol.yaw_init = gimbal_fetch_data.gimbal_imu_data.Yaw;
+        mid_round_patrol.yaw = mid_round_patrol.yaw_init;
+        mid_round_patrol.flag = 1;
+    }
+}
+
+static void RoundPatrol()
+{
+    if (round_patrol.flag == 0)
+    {
+        round_patrol.init_totol_round = gimbal_fetch_data.gimbal_imu_data.YawTotalAngle / 360.0f;
+        round_patrol.flag = 1;
+    }
+    round_patrol.total_round = (gimbal_fetch_data.gimbal_imu_data.YawTotalAngle / 360.0f) - round_patrol.init_totol_round;
+    gimbal_cmd_send.yaw += 0.15f;
+}
+
+void FoundEnermy()
+{
+    if (abs(minipc_recv_data->Vision.yaw) > 5 && abs(minipc_recv_data->Vision.yaw) < 20)
+    {
+        gimbal_cmd_send.yaw -= (0.0036f * minipc_recv_data->Vision.yaw) + 0.00001; // 往右获得的yaw是减 //0.0036
+    }
+    else
+    {
+        gimbal_cmd_send.yaw -= (0.00355f * minipc_recv_data->Vision.yaw); // 往右获得的yaw是减 //0.00355
+    }
+    gimbal_cmd_send.pitch -= 0.0025f * minipc_recv_data->Vision.pitch;//.00037
+}
+
+void GimbalAC()
+{
+    GetGimbalInitImu();
+
+    // 没发信息时巡逻
+    if (DataLebel.vision_flag == 0)
+    {
+        DataLebel.t_pitch = (float32_t)DWT_GetTimeline_s();
+        //上方不扫，减少扫描范围
+        gimbal_cmd_send.pitch = 20.0f * sinf(3.0f * DataLebel.t_pitch);
+
+        if (switch_is_down(rc_data[TEMP].rc.switch_left))
+        {
+            RoundPatrol();
+        }
+        // else
+        // {
+        //     MidRoundPatrol();
+        // }
+    }
+    else
+    {
+        // if(DataLebel.flag==2)
+        // {
+        //     TemporaryPatrol();
+        // }
+        // else
+        // {
+        FoundEnermy();
+        // }
+    }
+}
+
 static void ChassisAC()
 {
-
-    chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
-    chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
-
+    // NAV_SEND();
+    // chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
+    // chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
+       chassis_cmd_send.vx = 5000.0*minipc_recv_data->Vision.linevx;
+       chassis_cmd_send.vy = -5000.0*minipc_recv_data->Vision.linevy;
     if (switch_is_down(rc_data[TEMP].rc.switch_left))
     {
-        chassis_cmd_send.chassis_mode=CHASSIS_FOLLOW_GIMBAL_YAW;
+        chassis_cmd_send.chassis_mode=CHASSIS_FOLLOW_GIMBAL_YAW;\
     }
     else
         chassis_cmd_send.chassis_mode=CHASSIS_ROTATE;
@@ -276,32 +350,74 @@ static void ShootRC()
     }
 }
 
+static void MidRoundPatrol()
+{
+    DJIMotorInstance *yaw_motor = GetYawMotor();
+    // 如果巡逻模式刚刚被激活，重新初始化
+    if (mid_round_patrol.flag == 0 || yaw_motor->Power_out == 1)
+    {
+        mid_round_patrol.yaw_init = gimbal_fetch_data.gimbal_imu_data.Yaw;
+        mid_round_patrol.yaw = mid_round_patrol.yaw_init;
+        mid_round_patrol.flag = 1;
+    }
+    
+    // 使用当前实际角度计算，而不是历史角度
+    float current_relative_angle = gimbal_fetch_data.gimbal_imu_data.Yaw - mid_round_patrol.yaw_init;
+    
+    // 更新目标角度
+    current_relative_angle += 0.15f * mid_round_patrol.direction;
+    
+    // 边界检查
+    if (current_relative_angle > 70.0f)
+    {
+        current_relative_angle = 70.0f;
+        mid_round_patrol.direction = -1;
+    }
+    else if (current_relative_angle < -70.0f)
+    {
+        current_relative_angle = -70.0f;
+        mid_round_patrol.direction = 1;
+    }
+    
+    // 设置云台指令
+    gimbal_cmd_send.yaw = current_relative_angle + round_patrol.total_round * 360.0f;
+    
+    // 更新内部状态（可选，用于显示等）
+    mid_round_patrol.yaw_total_angle = current_relative_angle;
+}
+
 /**
  * @brief 控制输入为遥控器(调试时)的模式和控制量设置
  *
  */
 static void RemoteControlSet()
 {
-    ChassisRC();
-    GimbalAC();
+    
+    // GimbalAC();
     if(switch_is_up(rc_data[TEMP].rc.switch_left)) 
     {
+        
         AutoAimSet();
         if(DataLebel.aim_flag!=1)
         {
             gimbal_cmd_send.autoaim_mode=AUTO_ON;
             ShootRC();
-            // GimbalRC();
+            GimbalRC();
         }
         else
         {
             gimbal_cmd_send.autoaim_mode=FIND_Enermy;
         }
     }
+    else if(switch_is_mid(rc_data[TEMP].rc.switch_left))
+    {
+        ChassisAC();
+    }
     else
     {
+        ChassisRC();
         gimbal_cmd_send.autoaim_mode=AUTO_OFF;
-        // GimbalRC();
+        GimbalRC();
         ShootRC();
     }
 }

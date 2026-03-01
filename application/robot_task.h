@@ -64,18 +64,17 @@ __attribute__((noreturn)) void StartINSTASK(void const *argument)
         // 1kHz
         ins_start = DWT_GetTimeline_ms();
         INS_Task();
-        ins_dt = DWT_GetTimeline_ms() - ins_start;
-        if (ins_dt > 1)
-            LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]", &ins_dt);
-        // if(PC_PRSC % 300 == 0)
-        // {
-        //     SendMinipcData(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
-        //     PC_PRSC = 0;
-        // }
-        // else {
-        //     PC_PRSC++;
-        // }
-        SendMinipcData();
+        // ins_dt = DWT_GetTimeline_ms() - ins_start;
+        // if (ins_dt > 1)
+        //     LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]", &ins_dt);
+        if(PC_PRSC % 5 == 0)
+        {
+            SendMinipcData(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
+            PC_PRSC = 0;
+            ins_dt = DWT_GetTimeline_ms() - ins_start;
+        }
+        PC_PRSC++;
+        // SendMinipcData();
         osDelay(1);
     }
 }
