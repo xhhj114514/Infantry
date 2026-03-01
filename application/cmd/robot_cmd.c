@@ -215,7 +215,7 @@ static void ChassisRC()
 
 static void ChassisAC()
 {
-    NAV_SEND();
+
     chassis_cmd_send.vx = 30.0f * (float)rc_data[TEMP].rc.rocker_left_y; // _水平方向
     chassis_cmd_send.vy =-30.0f * (float)rc_data[TEMP].rc.rocker_left_x; // 竖直方向
 

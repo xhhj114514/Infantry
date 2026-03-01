@@ -65,7 +65,7 @@ void ShootInit()
     // 拨盘电机
     Motor_Init_Config_s loader_config = {
         .can_init_config = {
-            .can_handle = &hcan1,
+            .can_handle = &hcan2,
         },
         .controller_param_init_config = {
             .speed_PID = {
@@ -93,7 +93,7 @@ void ShootInit()
         },
         .motor_type = M2006 
     };
-    loader_config.can_init_config.tx_id=1;
+    loader_config.can_init_config.tx_id=3;
     loader = DJIMotorInit(&loader_config);
 
     shoot_pub = PubRegister("shoot_feed", sizeof(Shoot_Upload_Data_s));
