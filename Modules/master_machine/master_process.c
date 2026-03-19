@@ -13,7 +13,7 @@ static DaemonInstance *minipc_daemon_instance;
 void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
 					uint16_t self_sentry_HP,uint16_t self_infantry_HP,uint16_t self_hero_HP,
 					uint16_t enermy_sentry_HP,uint16_t enermy_infantry_HP,uint16_t enermy_hero_HP,
-                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color
+                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color,float bullet_speed
 					)
 {
     minipc_send_data.header=SEND_ID;
@@ -36,6 +36,7 @@ void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
     minipc_send_data.Vision.occupation =occupation;   // 区域占领状态
     minipc_send_data.Vision.match_progress=game_progress;
     minipc_send_data.Vision.detect_color=detect_color;
+    minipc_send_data.Vision.bullet_speed=bullet_speed;
 }
 
 void VisionSetFlag(uint8_t color)

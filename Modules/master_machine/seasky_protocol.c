@@ -93,8 +93,9 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     memcpy( &tx_buf[30],&tx_data->Vision.remain_bullet, 2);
     memcpy( &tx_buf[32],&tx_data->Vision.match_progress, 1);
     memcpy( &tx_buf[33],&tx_data->Vision.occupation, 1);
-    //NAV USART
-    Append_CRC16_Check_Sum(&tx_buf[0],36);
+    memcpy( &tx_buf[34],&tx_data->Vision.bullet_speed,4);
+    //NAV USART 34+4
+    Append_CRC16_Check_Sum(&tx_buf[0],38+2);
     *tx_buf_len = 36;
 #endif
 }

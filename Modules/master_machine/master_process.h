@@ -94,6 +94,7 @@ typedef struct
 		uint16_t remain_bullet;
 		uint8_t match_progress;
 		uint8_t occupation;
+		float bullet_speed;
 	}Vision;
 	// struct
 	// {
@@ -140,7 +141,7 @@ void SendMinipcData();
 void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
 					uint16_t self_sentry_HP,uint16_t self_infantry_HP,uint16_t self_hero_HP,
 					uint16_t enermy_sentry_HP,uint16_t enermy_infantry_HP,uint16_t enermy_hero_HP,
-                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color
+                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color,float bullet_speed
 					);
 
 
