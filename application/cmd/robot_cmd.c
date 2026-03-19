@@ -74,9 +74,9 @@ static uint32_t YAW_CHASSIS_ALIGN_ECD;
 static uint8_t YAW_ECD_GREATER_THAN_4096;
 
 
-static BoardCommInstance* Referee_can_commrecv;
-static Referee_Ctrl_Cmd_s Referee_can_CTRL; 
-
+static BoardCommInstance* CMDBoard_can;
+// static Referee_Ctrl_Cmd_s Referee_can_CTRL; 
+static Referee_Interactive_info_t *Referee_can_UI_InterACT;
 void RobotCMDInit()
 {
     referee_data= UITaskInit(&huart6,&ui_data);
@@ -85,18 +85,18 @@ void RobotCMDInit()
     rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
     minipc_recv_data = minipcInit(&huart1); // 视觉通信串口
     memset(minipc_recv_data, 0, sizeof(Minipc_Recv_s));
-            //双板通信Sender
-    // BoardComm_Init_Config_s comm_conf = {
-    //     .can_config = {
-    //         .can_handle = &hcan1,
-    //         //云台的tx是底盘的rx，别搞错了！！！
-    //         .tx_id = 0x200,
-    //         .rx_id = 0x209,
-    //     },
-    //     .recv_data_len = sizeof(Referee_Ctrl_Cmd_s),
-    //     .send_data_len = sizeof(Referee_Ctrl_Cmd_s),
-    // };
-    // Referee_can_commrecv = BoardCommInit(&comm_conf);
+            //双板通信RECVER
+    BoardComm_Init_Config_s comm_conf = {
+        .can_config = {
+            .can_handle = &hcan1,
+            //云台的tx是底盘的rx，别搞错了！！！
+            .tx_id = 0x200,
+            .rx_id = 0x209,
+        },
+        .recv_data_len = sizeof(Referee_Interactive_info_t),
+        .send_data_len = sizeof(Referee_Interactive_info_t),
+    };
+    CMDBoard_can = BoardCommInit(&comm_conf);
 #endif
 
     gimbal_cmd_pub = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
@@ -897,7 +897,7 @@ void RobotCMDTask()
     SendToUIData();
 
 #ifdef Gimbal_Board
-    // Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
+    Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
 #endif
 
 }

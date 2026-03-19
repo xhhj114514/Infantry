@@ -8,7 +8,7 @@
 #include "can_comm.h"
 #include "general_def.h"
 
-static BoardCommInstance* Referee_Can_Comm;
+static BoardCommInstance* Gimbal_UI_RECV;
 
 static Referee_Interactive_info_t *Interactive_data; // UI绘制需要的机器人状态数据
 static referee_info_t *referee_recv_info;            // 接收到的裁判系统数据
@@ -105,7 +105,7 @@ void UITask()
 {
 #ifdef Cmd_Board
     MYUIControl(referee_recv_info,&RefereeCTRL);
-    BoardCommSend(Referee_Can_Comm, (void *)&RefereeCTRL);
+    BoardCommSend(Gimbal_UI_RECV, (void *)&RefereeCTRL);
 #else 
     MyUIRefresh(referee_recv_info, Interactive_data);
 #endif
