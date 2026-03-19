@@ -76,7 +76,7 @@ static uint8_t YAW_ECD_GREATER_THAN_4096;
 
 static BoardCommInstance* CMDBoard_can;
 // static Referee_Ctrl_Cmd_s Referee_can_CTRL; 
-static Referee_Interactive_info_t *Referee_can_UI_InterACT;
+static Referee_Interactive_info_t Referee_can_UI_InterACT;
 void RobotCMDInit()
 {
     referee_data= UITaskInit(&huart6,&ui_data);
@@ -897,7 +897,7 @@ void RobotCMDTask()
     SendToUIData();
 
 #ifdef Gimbal_Board
-    Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
+    Referee_can_UI_InterACT = *(Referee_Interactive_info_t*)BoardCommGet(CMDBoard_can);
 #endif
 
 }

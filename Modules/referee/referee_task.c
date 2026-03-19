@@ -105,7 +105,7 @@ void UITask()
 {
 #ifdef Cmd_Board
     MYUIControl(referee_recv_info,&RefereeCTRL);
-    BoardCommSend(Gimbal_UI_RECV, (void *)&RefereeCTRL);
+    // BoardCommSend(Gimbal_UI_RECV, (void *)&RefereeCTRL);
 #else 
     MyUIRefresh(referee_recv_info, Interactive_data);
 #endif
