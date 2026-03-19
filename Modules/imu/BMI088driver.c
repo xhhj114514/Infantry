@@ -135,7 +135,7 @@ void Calibrate_MPU_Offset(IMU_Data_t *bmi088)
             bmi088->GyroOffset[1] = GyOFFSET;
             bmi088->GyroOffset[2] = GzOFFSET;
             bmi088->gNorm = gNORM;
-            bmi088->TempWhenCali = 40;
+            // bmi088->TempWhenCali = 40;
             LOGERROR("[BMI088] Calibrate Failed! Use offline params");
             break;
         }
@@ -232,7 +232,7 @@ void Calibrate_MPU_Offset(IMU_Data_t *bmi088)
              gyroDiff[2] > 0.15f ||
              fabsf(bmi088->GyroOffset[0]) > 0.01f ||
              fabsf(bmi088->GyroOffset[1]) > 0.01f ||
-             fabsf(bmi088->GyroOffset[2]) > 0.01f);
+             fabsf(bmi088->GyroOffset[2]) > 0.01f || bmi088->TempWhenCali >= 39);
 
     bmi088->AccelScale = 9.81f / bmi088->gNorm;
 }

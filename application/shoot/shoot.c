@@ -153,11 +153,12 @@ static void ShootSpeedSet()
 {
     if (shoot_cmd_recv.friction_mode == FRICTION_ON)
     {
-        DJIMotorSetRef(friction_l, 30000);
-        DJIMotorSetRef(friction_r, 30000);
+        DJIMotorSetRef(friction_l, 38000);
+        DJIMotorSetRef(friction_r, 38000);//25000->12
     }
     else // 关闭摩擦轮
     {
+        
         DJIMotorSetRef(friction_l, 0);
         DJIMotorSetRef(friction_r, 0);
     }

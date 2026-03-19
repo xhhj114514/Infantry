@@ -15,6 +15,7 @@
 #include "buzzer.h"
 
 #include "bsp_log.h"
+#include "robot_def.h"
 
 osThreadId insTaskHandle;
 osThreadId robotTaskHandle;
@@ -37,26 +38,25 @@ void OSTaskInit()
     osThreadDef(instask, StartINSTASK, osPriorityAboveNormal, 0, 1024);
     insTaskHandle = osThreadCreate(osThread(instask), NULL); // 由于是阻塞读取传感器,为姿态解算设置较高优先级,确保以1khz的频率执行
     // 后续修改为读取传感器数据准备好的中断处理,
-
+#ifdef Gimbal_Board
     osThreadDef(motortask, StartMOTORTASK, osPriorityNormal, 0, 1024);
     motorTaskHandle = osThreadCreate(osThread(motortask), NULL);
 
     osThreadDef(daemontask, StartDAEMONTASK, osPriorityNormal, 0, 128);
     daemonTaskHandle = osThreadCreate(osThread(daemontask), NULL);
-
+#endif
     osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024);
     robotTaskHandle = osThreadCreate(osThread(robottask), NULL);
 
-    osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 512);
+    osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 1024);
     uiTaskHandle = osThreadCreate(osThread(uitask), NULL);
+
 }
 
 __attribute__((noreturn)) void StartINSTASK(void const *argument)
 {
     static float ins_start;
     static float ins_dt;
-    static  uint32_t PC_PRSC;
-    PC_PRSC = 0;
     INS_Init(); // 确保BMI088被正确初始化.
     LOGINFO("[freeRTOS] INS Task Start");
     for (;;)
@@ -64,17 +64,9 @@ __attribute__((noreturn)) void StartINSTASK(void const *argument)
         // 1kHz
         ins_start = DWT_GetTimeline_ms();
         INS_Task();
-        // ins_dt = DWT_GetTimeline_ms() - ins_start;
-        // if (ins_dt > 1)
-        //     LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]", &ins_dt);
-        if(PC_PRSC % 5 == 0)
-        {
-            SendMinipcData(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
-            PC_PRSC = 0;
-            ins_dt = DWT_GetTimeline_ms() - ins_start;
-        }
-        PC_PRSC++;
-        // SendMinipcData();
+        ins_dt = DWT_GetTimeline_ms() - ins_start;
+        if (ins_dt > 1)
+            LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]", &ins_dt);
         osDelay(1);
     }
 }

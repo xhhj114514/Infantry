@@ -6,7 +6,7 @@
 #pragma pack(1)
 typedef struct
 {
-    uint16_t vol; // 电压
+    int16_t vol; // 电压
     uint16_t current; // 电流
     uint16_t power; // 功率
 } SuperCap_Msg_s;

@@ -5,6 +5,7 @@
 #include "crc_ref.h"
 #include "memory.h"
 #include <string.h>
+#include "robot_def.h"
 
 static Minipc_Recv_s minipc_recv_data;
 static Minipc_Send_s minipc_send_data;
@@ -69,60 +70,33 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     static uint16_t crc16;
     static uint16_t data_len;
 
-    // data_len =  2;
-    /*帧头部分*/
-    // tx_buf[0] = SEND_VISION_ID;
-    /*数据段*/
-    // tx_buf[1] =tx_data->Vision.detect_color;
-    // *tx_buf_len = data_len ;
-    //tx_buf[1] = data_len & 0xff;        // 低位在前
-    //tx_buf[2] = (data_len >> 8) & 0xff; // 低位在前
-    //tx_buf[3] = crc_8(&tx_buf[0], 3);   // 获取CRC8校验位
-
-    /*数据的信号id*/
-    //tx_buf[4] = send_id & 0xff;
-    //tx_buf[5] = (send_id >> 8) & 0xff;
-
-    /*建立16位寄存器*/
-    //tx_buf[6] = flags_register & 0xff;
-    //tx_buf[7] = (flags_register >> 8) & 0xff;
-
-    /*float数据段*/
-    //for (int i = 0; i < 4 * float_length; i++)
-    //{
-    //    tx_buf[i + 8] = ((uint8_t *)(&tx_data[i / 4]))[i % 4];
-    //}
-    tx_data->Vision.vx = 1.14;
-    tx_data->Vision.vy = 51.4;
-    tx_data->Vision.sentry_hp = 114;
-    tx_data->Vision.infantry_hp = 514;
-    tx_data->Vision.match_progress = 100;
-    tx_data->Vision.hero_hp = 222;
-    tx_data->Vision.remain_time = 333;
-    tx_data->Vision.remain_bullet = 444;
-    /*整包校验*/
-    //crc16 = crc_16(&tx_buf[0], data_len + 6);
-    //tx_buf[data_len + 6] = crc16 & 0xff;
-    //tx_buf[data_len + 7] = (crc16 >> 8) & 0xff;// 2+20+10+2
-    tx_buf[0] = SEND_VISION_ID;
+    tx_buf[0] = SEND_ID;
 	memcpy(&tx_buf[1], &tx_data->Vision.detect_color, 1);
     memcpy( &tx_buf[2],&tx_data->Vision.roll, 4);
     memcpy( &tx_buf[6],&tx_data->Vision.pitch, 4);
     memcpy( &tx_buf[10],&tx_data->Vision.yaw, 4);
+
+#ifdef InfantryMode
+    //VISION
+    // Append_CRC16_Check_Sum(&tx_buf[0],16);
+    // *tx_buf_len = 16;
+#endif
+#ifdef SentryMode
     memcpy( &tx_buf[14],&tx_data->Vision.vx, 4);
     memcpy( &tx_buf[18],&tx_data->Vision.vy, 4);
 
-    memcpy( &tx_buf[22],&tx_data->Vision.sentry_hp, 2);
-    memcpy( &tx_buf[24],&tx_data->Vision.hero_hp, 2);
-    memcpy( &tx_buf[26],&tx_data->Vision.infantry_hp, 2);
+    memcpy( &tx_buf[22],&tx_data->Vision.self_sentry_HP, 2);
+    memcpy( &tx_buf[24],&tx_data->Vision.self_hero_HP, 2);
+    memcpy( &tx_buf[26],&tx_data->Vision.self_infantry_HP, 2);
 
     memcpy( &tx_buf[28],&tx_data->Vision.remain_time, 2);
     memcpy( &tx_buf[30],&tx_data->Vision.remain_bullet, 2);
     memcpy( &tx_buf[32],&tx_data->Vision.match_progress, 1);
     memcpy( &tx_buf[33],&tx_data->Vision.occupation, 1);
-
+    //NAV USART
     Append_CRC16_Check_Sum(&tx_buf[0],36);
     *tx_buf_len = 36;
+#endif
 }
 
 /*
@@ -161,29 +135,30 @@ void get_protocol_info_vision(uint8_t *rx_buf,
 //         recv_data->Vision.detect_color = rx_buf[1];
 // // 检查帧头
 // }
-        if (rx_buf[0] != SEND_VISION_ID) 
+        if (rx_buf[0] != PROTOCOL_CMD_ID)
         {
             // return 0;
         }
         else {
-            memcpy(&recv_data->header, &rx_buf[0], 1);
-            memcpy(&recv_data->Vision.linevx, &rx_buf[1], 4);
-            memcpy(&recv_data->Vision.linevy, &rx_buf[5], 4);
-            memcpy(&recv_data->Vision.gimbal_mode, &rx_buf[9], 1);
-            memcpy(&recv_data->Vision.yaw, &rx_buf[10], 4);
-            memcpy(&recv_data->Vision.pitch, &rx_buf[14], 4);
-            memcpy(&recv_data->Vision.shoot_flag, &rx_buf[18], 1);
+#ifdef InfantryMode
+            //VISION
             // memcpy(&recv_data->header, &rx_buf[0], 1);
             // memcpy(&recv_data->Vision.pitch, &rx_buf[1], 4);
             // memcpy(&recv_data->Vision.yaw, &rx_buf[5], 4);
             // memcpy(&recv_data->Vision.shoot_flag, &rx_buf[9], 1);
             // memcpy(&recv_data->Vision.time, &rx_buf[10], 4);
-//         recv_data->NAV.gimbal_mode = rx_buf[9];
-//         recv_data->NAV.fire_judge = rx_buf[15];
-//         memcpy(&recv_data->NAV.line_vx, &rx_buf[1], sizeof(float));
-//         memcpy(&recv_data->NAV.line_vy, &rx_buf[5], sizeof(float));
-//         memcpy(&recv_data->NAV.yaw, &rx_buf[9], sizeof(float));
-//         memcpy(&recv_data->NAV.pitch, &rx_buf[13], sizeof(float));
+#endif
+#ifdef SentryMode
+            //NAV UART
+            memcpy(&recv_data->header, &rx_buf[0], 1);
+            memcpy(&recv_data->Vision.linevx, &rx_buf[1], 4);
+            memcpy(&recv_data->Vision.linevy, &rx_buf[5], 4);
+            memcpy(&recv_data->Vision.gimbal_mode, &rx_buf[9], 4);
+            memcpy(&recv_data->Vision.yaw, &rx_buf[13], 4);
+            memcpy(&recv_data->Vision.pitch, &rx_buf[17], 4);
+            memcpy(&recv_data->Vision.shoot_flag, &rx_buf[21], 4);
+            // recv_data->Vision.pitch *= -1;
+#endif
         }
 
         // return 1; // 解析成功

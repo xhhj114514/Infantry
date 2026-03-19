@@ -91,6 +91,7 @@ typedef struct
     Motor_Control_Setting_s motor_settings; // 电机设置
     Motor_Controller_s motor_controller;
     MI_Motor_Measure_s measure;
+    uint16_t TORQUE_ERRORCNT;
 }MIMotorInstance;
 
 /**********************Functions**************************/

@@ -7,8 +7,8 @@
 #include "bsp_dwt.h"
 #include "arm_math.h"
 
-#include "rm_referee.h"
-#include "referee_task.h"
+// #include "rm_referee.h"
+// #include "referee_task.h"
 
 /* 根据robot_def.h中的macro自动计算的参数 */
 #define HALF_WHEEL_BASE (WHEEL_BASE / 2.0f)     // 半轴距
@@ -119,9 +119,11 @@ static void ChassisStateSet()
     }
 }
 
+static uint16_t TESTPWR;
+// 9 lowest
 static void SendPowerData()
 {
-    power_data=chassis_cmd_recv.power_limit;
+    power_data= 100;//chassis_cmd_recv.power_limit;
 }
 
 /**
@@ -130,16 +132,21 @@ static void SendPowerData()
  */
 static void MecanumCalculate()
 {   
-    cos_theta = arm_cos_f32(chassis_cmd_recv.offset_angle * DEGREE_2_RAD);
-    sin_theta = arm_sin_f32(chassis_cmd_recv.offset_angle * DEGREE_2_RAD);
+    chassis_info.cnt = (float32_t)DWT_GetTimeline_s();//用于变速小陀螺
+    chassis_info.cos_theta = arm_cos_f32(chassis_cmd_recv.offset_angle * DEGREE_2_RAD);
+    chassis_info.sin_theta = arm_sin_f32(chassis_cmd_recv.offset_angle * DEGREE_2_RAD);
 
-    chassis_vx = chassis_cmd_recv.vx * cos_theta - chassis_cmd_recv.vy * sin_theta; 
-    chassis_vy = chassis_cmd_recv.vx * sin_theta + chassis_cmd_recv.vy * cos_theta;
 
-    vt_lf = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LF_CENTER;
-    vt_lb = chassis_vx + chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
-    vt_rb = chassis_vx - chassis_vy + chassis_cmd_recv.wz * RB_CENTER;
-    vt_rf = chassis_vx + chassis_vy + chassis_cmd_recv.wz * RF_CENTER;
+    chassis_info.chassis_vx = chassis_cmd_recv.vx * chassis_info.cos_theta - chassis_cmd_recv.vy * chassis_info.sin_theta; 
+    chassis_info.chassis_vy = chassis_cmd_recv.vx * chassis_info.sin_theta + chassis_cmd_recv.vy * chassis_info.cos_theta;
+    
+    chassis_info.wz = (1200+100*(float32_t)sin(chassis_info.cnt))*4.75*chassis_cmd_recv.wz/100;
+
+    chassis_info.vt_lf = chassis_info.chassis_vx - chassis_info.chassis_vy - chassis_cmd_recv.wz ;
+    chassis_info.vt_lb = chassis_info.chassis_vx + chassis_info.chassis_vy - chassis_cmd_recv.wz ;
+    chassis_info.vt_rb = chassis_info.chassis_vx - chassis_info.chassis_vy + chassis_cmd_recv.wz ;
+    chassis_info.vt_rf = chassis_info.chassis_vx + chassis_info.chassis_vy + chassis_cmd_recv.wz ;
+
 }
 /**
  * @brief 根据裁判系统和电容剩余容量对输出进行限制并设置电机参考值
@@ -148,7 +155,7 @@ static void MecanumCalculate()
 static void LimitChassisOutput()
 {
 
-    if(cap->cap_msg.vol<24&&cap->cap_msg.vol>13)
+    if(cap->cap_msg.vol<=24&&cap->cap_msg.vol>13)
     {
         chassis_feedback_data.power_flag=1; 
     }
@@ -157,11 +164,11 @@ static void LimitChassisOutput()
         chassis_feedback_data.power_flag=0; 
     }
 
-    // 完成功率限制后进行电机参考输入设定
-    DJIMotorSetRef(motor_lf, vt_lf);
-    DJIMotorSetRef(motor_rf, vt_rf);
-    DJIMotorSetRef(motor_lb, vt_lb);
-    DJIMotorSetRef(motor_rb, vt_rb);
+    // // 完成功率限制后进行电机参考输入设定
+    DJIMotorSetRef(motor_lf, chassis_info.vt_lf);
+    DJIMotorSetRef(motor_rf, chassis_info.vt_rf);
+    DJIMotorSetRef(motor_lb, chassis_info.vt_lb);
+    DJIMotorSetRef(motor_rb, chassis_info.vt_rb);
 }
 
 /*****************************************SendData********************************************/
@@ -183,81 +190,44 @@ static void SendChassisData()
     chassis_feedback_data.real_vy = -chassis_info.vx * chassis_info.sin_theta + chassis_info.vy * chassis_info.cos_theta;
 }
 
-// /**
-//  * @brief  将裁判系统的信息发给巡航、视觉让其进行决策。
-//  */
-// static void SendJudgeData()
-// {
-//     chassis_feedback_data.Occupation=(referee_data->EventData.event_type >> 21) & 0x03;
-//     chassis_feedback_data.remain_time=referee_data->GameState.stage_remain_time;
-//     chassis_feedback_data.game_progress=referee_data->GameState.game_progress;
-    
-//     if(referee_data->GameRobotState.robot_id>7)
-//     {
-//         chassis_feedback_data.enemy_color=COLOR_RED;
 
-//         chassis_feedback_data.remain_HP=referee_data->GameRobotHP.blue_7_robot_HP;
-//         chassis_feedback_data.self_hero_HP=referee_data->GameRobotHP.blue_1_robot_HP;
-//         chassis_feedback_data.self_infantry_HP=referee_data->GameRobotHP.blue_3_robot_HP;
-
-//         chassis_feedback_data.enemy_hero_HP=referee_data->GameRobotHP.red_1_robot_HP;
-//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.red_3_robot_HP;
-//         chassis_feedback_data.enemy_sentry_HP=referee_data->GameRobotHP.red_7_robot_HP;
-//     }
-//     else
-//     {
-//         chassis_feedback_data.enemy_color=COLOR_BLUE;
-//         chassis_feedback_data.remain_HP=referee_data->GameRobotHP.red_7_robot_HP;
-//         chassis_feedback_data.self_hero_HP=referee_data->GameRobotHP.red_1_robot_HP;
-//         chassis_feedback_data.self_infantry_HP=referee_data->GameRobotHP.red_3_robot_HP;
-
-//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.blue_1_robot_HP;
-//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.blue_3_robot_HP;
-//         chassis_feedback_data.enemy_infantry_HP=referee_data->GameRobotHP.blue_7_robot_HP;
-//     }   
-//     chassis_feedback_data.left_bullet_heat= referee_data->PowerHeatData.shooter_17mm_2_barrel_heat;
-//     chassis_feedback_data.right_bullet_heat= referee_data->PowerHeatData.shooter_17mm_1_barrel_heat;
-//     chassis_feedback_data.bullet_num=referee_data->ProjectileAllowance.projectile_allowance_17mm;
-//     chassis_feedback_data.bullet_speed=referee_data->ShootData.bullet_speed;
-// }
-
-static void SendJudgeData()
+void SendJudgeData(referee_info_t* referee_Data)
 {
         // 没有装甲板数据时使用裁判系统数据
-        chassis_feedback_data.Occupation = (referee_data->EventData.event_type >> 21) & 0x03;
-        chassis_feedback_data.remain_time = referee_data->GameState.stage_remain_time;
-        chassis_feedback_data.game_progress = referee_data->GameState.game_progress;
+        // chassis_feedback_data.Occupation = (referee_Data->EventData.event_type >> 21) & 0x03;
+        chassis_feedback_data.remain_time = referee_Data->GameState.stage_remain_time;
+        chassis_feedback_data.game_progress = referee_Data->GameState.game_progress;
         
         if(referee_data->GameRobotState.robot_id > 7) {
             chassis_feedback_data.enemy_color = COLOR_RED;
-            chassis_feedback_data.remain_HP = referee_data->GameRobotHP.blue_7_robot_HP;
-            chassis_feedback_data.self_hero_HP = referee_data->GameRobotHP.blue_1_robot_HP;
-            chassis_feedback_data.self_infantry_HP = referee_data->GameRobotHP.blue_3_robot_HP;
-            chassis_feedback_data.enemy_hero_HP = referee_data->GameRobotHP.red_1_robot_HP;
-            chassis_feedback_data.enemy_infantry_HP = referee_data->GameRobotHP.red_3_robot_HP;
-            chassis_feedback_data.enemy_sentry_HP = referee_data->GameRobotHP.red_7_robot_HP;
+            chassis_feedback_data.remain_HP = referee_data->GameRobotHP.self_sentry_HP ;
+            chassis_feedback_data.self_hero_HP = referee_data->GameRobotHP.self_Hero_HP;
+            chassis_feedback_data.self_infantry_HP = referee_data->GameRobotHP.self_3_fantry_HP;
+            // chassis_feedback_data.enemy_hero_HP = referee_data->GameRobotHP.red_1_robot_HP;
+            // chassis_feedback_data.enemy_infantry_HP = referee_data->GameRobotHP.red_3_robot_HP;
+            // chassis_feedback_data.enemy_sentry_HP = referee_data->GameRobotHP.red_7_robot_HP;
         } 
         else
         {
             chassis_feedback_data.enemy_color = COLOR_BLUE;
-            chassis_feedback_data.remain_HP = referee_data->GameRobotHP.red_7_robot_HP;
-            chassis_feedback_data.self_hero_HP = referee_data->GameRobotHP.red_1_robot_HP;
-            chassis_feedback_data.self_infantry_HP = referee_data->GameRobotHP.red_3_robot_HP;
-            chassis_feedback_data.enemy_hero_HP = referee_data->GameRobotHP.blue_1_robot_HP;
-            chassis_feedback_data.enemy_infantry_HP = referee_data->GameRobotHP.blue_3_robot_HP;
-            chassis_feedback_data.enemy_sentry_HP = referee_data->GameRobotHP.blue_7_robot_HP;
+            chassis_feedback_data.remain_HP = referee_data->GameRobotHP.self_sentry_HP ;
+            chassis_feedback_data.self_hero_HP = referee_data->GameRobotHP.self_Hero_HP;
+            chassis_feedback_data.self_infantry_HP = referee_data->GameRobotHP.self_3_fantry_HP;
+            // chassis_feedback_data.enemy_hero_HP = referee_data->GameRobotHP.blue_1_robot_HP;
+            // chassis_feedback_data.enemy_infantry_HP = referee_data->GameRobotHP.blue_3_robot_HP;
+            // chassis_feedback_data.enemy_sentry_HP = referee_data->GameRobotHP.blue_7_robot_HP;
         }
     // 以下数据始终从裁判系统获取
-    chassis_feedback_data.left_bullet_heat = referee_data->PowerHeatData.shooter_17mm_2_barrel_heat;
-    chassis_feedback_data.right_bullet_heat = referee_data->PowerHeatData.shooter_17mm_1_barrel_heat;
-    chassis_feedback_data.bullet_num = referee_data->ProjectileAllowance.projectile_allowance_17mm;
-    chassis_feedback_data.bullet_speed = referee_data->ShootData.bullet_speed;
+    chassis_feedback_data.right_bullet_heat = referee_Data->PowerHeatData.shooter_17mm_barrel_heat;
+    chassis_feedback_data.bullet_num = referee_Data->ProjectileAllowance.projectile_allowance_17mm;
+    chassis_feedback_data.bullet_speed = referee_Data->ShootData.bullet_speed;
 }
 
 /* 机器人底盘控制核心任务 */
 void ChassisTask()
 {
     SubGetMessage(chassis_sub, &chassis_cmd_recv);
+    SendJudgeData(referee_data);
     ChassisStateSet();
     // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
@@ -266,7 +236,7 @@ void ChassisTask()
     LimitChassisOutput();
     // 推送反馈消息
     PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
-        SendPowerData();
+    SendPowerData();
+    SendChassisData();
     SuperCapSend(cap, (uint8_t*)&power_data);
-
 }

@@ -9,6 +9,35 @@ static Minipc_Recv_s minipc_recv_data;
 static Minipc_Send_s minipc_send_data;
 static DaemonInstance *minipc_daemon_instance;
 
+
+void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
+					uint16_t self_sentry_HP,uint16_t self_infantry_HP,uint16_t self_hero_HP,
+					uint16_t enermy_sentry_HP,uint16_t enermy_infantry_HP,uint16_t enermy_hero_HP,
+                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color
+					)
+{
+    minipc_send_data.header=SEND_ID;
+    minipc_send_data.Vision.vx=vx;
+    minipc_send_data.Vision.vy=vy;
+    minipc_send_data.Vision.yaw=yaw;
+    // minipc_send_data.Vision.enemy_hero_HP=enermy_hero_HP;
+    // minipc_send_data.Vision.enemy_infantry_HP=enermy_infantry_HP;
+    // minipc_send_data.Vision.enemy_sentry_HP=enermy_sentry_HP;
+   if (self_sentry_HP>500)
+   {
+      self_sentry_HP=500;
+   }
+    minipc_send_data.Vision.self_sentry_HP=self_sentry_HP;
+    minipc_send_data.Vision.self_infantry_HP=self_infantry_HP;
+    minipc_send_data.Vision.self_hero_HP=self_hero_HP;
+
+    minipc_send_data.Vision.remain_time=remain_time;  // 比赛剩余时间
+    minipc_send_data.Vision.remain_bullet=remain_bullet;
+    minipc_send_data.Vision.occupation =occupation;   // 区域占领状态
+    minipc_send_data.Vision.match_progress=game_progress;
+    minipc_send_data.Vision.detect_color=detect_color;
+}
+
 void VisionSetFlag(uint8_t color)
 {
     // minipc_send_data.Vision.detect_color=color;
@@ -33,6 +62,7 @@ static USARTInstance *minipc_usart_instance;
 static void VisionOfflineCallback(void *id)
 {
 #ifdef VISION_USE_UART
+    memset(minipc_usart_instance->recv_buff, 0, minipc_usart_instance->recv_buff_size);
     USARTServiceInit(minipc_usart_instance);
 #endif // !VISION_USE_UART
     LOGWARNING("[vision] vision offline, restart communication.");
@@ -92,10 +122,8 @@ void SendMinipcData()
     // flag_register = 30 << 8 | 0b00000001;
     // 将数据转化为seasky协议的数据包
     get_protocol_send_Vision_data(0x02, flag_register, &minipc_send_data, 1, send_buff, &tx_len);
-
-    VisionSetAltitude();
-    // NAV_SEND();
-    USARTSend(minipc_usart_instance, send_buff, tx_len, USART_TRANSFER_IT); // 和视觉通信使用IT,防止和接收使用的DMA冲突
+    // VisionSetAltitude();
+    USARTSend(minipc_usart_instance, send_buff, tx_len, USART_TRANSFER_DMA); // 和视觉通信使用IT,防止和接收使用的DMA冲突
     // 此处为HAL设计的缺陷,DMASTOP会停止发送和接收,导致再也无法进入接收中断.
     // 也可在发送完成中断中重新启动DMA接收,但较为复杂.因此,此处使用IT发送.
     // 若使用了daemon,则也可以使用DMA发送.

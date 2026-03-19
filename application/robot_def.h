@@ -1,4 +1,7 @@
 #pragma once // 可以用#pragma once代替#ifndef ROBOT_DEF_H(header guard)
+#include "arm_math_types.h"
+#include "referee_protocol.h"
+#include "remote_control.h"
 #ifndef ROBOT_DEF_H
 #define ROBOT_DEF_H
 
@@ -8,16 +11,20 @@
 
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
 #define ONE_BOARD // 单板控制整车
+#define Gimbal_Board   //Cmd_Board SentryMode全自动设置为Gimbal_Board  GIMBAL->vt03  CMD->referee
+#define SentryMode
 
 #define VISION_USE_UART // 使用串口发送视觉数据
 
 /* 机器人重要参数定义,注意根据不同机器人进行修改,浮点数需要以.0或f结尾,无符号以u结尾 */
 // 云台参数
-#define YAW_CHASSIS_ALIGN_ECD 4140  // 云台和底盘对齐指向相同方向时的电机编码器值,若对云台有机械改动需要修改
-#define YAW_ECD_GREATER_THAN_4096 1 // ALIGN_ECD值是否大于4096,是为1,否为0;用于计算云台偏转角度
+
+#define ALIGNECD 1758  // 云台和底盘对齐指向相同方向时的电机编码器值,若对云台有机械改动需要修改
+#define ALIGNECD_GREATER_THAN_4096 0 // ALIGN_ECD值是否大于4096,是为1,否为0;用于计算云台偏转角度
 #define PITCH_HORIZON_ECD 3412      // 云台处于水平位置时编码器值,若对云台有机械改动需要修改
-#define PITCH_MAX_ANGLE 0          // 云台竖直方向最大角度 (注意反馈如果是陀螺仪，则填写陀螺仪的角度)
-#define PITCH_MIN_ANGLE -0.87           // 云台竖直方向最小角度 (注意反馈如果是陀螺仪，则填写陀螺仪的角度)
+#define PITCH_MAX_ANGLE -0.1          // 云台竖直方向最大角度 (注意反馈如果是陀螺仪，则填写陀螺仪的角度)
+#define PITCH_MIN_ANGLE -0.9           // 云台竖直方向最小角度 (注意反馈如果是陀螺仪，则填写陀螺仪的角度)
+
 // 发射参数
 #define ONE_BULLET_DELTA_ANGLE 36    // 发射一发弹丸拨盘转动的距离,由机械设计图纸给出
 #define REDUCTION_RATIO_LOADER 49.0f // 拨盘电机的减速比,英雄需要修改为3508的19.0f
@@ -27,15 +34,21 @@
 #define TRACK_WIDTH 300             // 横向轮距(左右平移方向)
 #define CENTER_GIMBAL_OFFSET_X 0    // 云台旋转中心距底盘几何中心的距离,前后方向,云台位于正中心时默认设为0
 #define CENTER_GIMBAL_OFFSET_Y 0    // 云台旋转中心距底盘几何中心的距离,左右方向,云台位于正中心时默认设为0
-#define RADIUS_WHEEL 60             // 轮子半径
+#define RADIUS_WHEEL 60.0             // 轮子半径
 #define REDUCTION_RATIO_WHEEL 19.0f // 电机减速比,因为编码器量测的是转子的速度而不是输出轴的速度故需进行转换
-
+#define PERIMETER_WHEEL (RADIUS_WHEEL * 2 * PI) // 轮周长(速度计算用)
 #pragma pack(1) // 压缩结构体,取消字节对齐,下面的数据都可能被传输
 /* -------------------------基本控制模式和数据类型定义-------------------------*/
 /**
  * @brief 这些枚举类型和结构体会作为CMD控制数据和各应用的反馈数据的一部分
  *
  */
+
+ typedef enum
+{
+    RC = 0,
+    AC,
+} LAST_Mode_e;
 // 机器人状态
 typedef enum
 {
@@ -112,13 +125,16 @@ typedef struct
     float t_shoot;
     float t_pitch;
     float t_cmd_error;
-    
+
     uint8_t vision_flag;  // 视觉系统工作标志
     uint8_t aim_flag;
     uint8_t shoot_flag;
     uint8_t cmd_error_flag;
     uint8_t fire_flag;
     uint8_t reverse_flag;
+
+    uint8_t ACEntryPoint;
+
 }DataLebel_t;
 
 /**
@@ -145,6 +161,7 @@ typedef struct {
     float cos_theta;      // 角度余弦值(运动学解算用)
     float vx;             // 临时计算变量X
     float vy;             // 临时计算变量Y
+    float wz;
     float cnt;            // 计数器/中间变量
 } Cal_Chassis_Info_t;
 
@@ -193,12 +210,17 @@ typedef struct
     // 控制部分
     float vx;           // 前进方向速度
     float vy;           // 横移方向速度
-    float wz;           // 旋转速度
+    float64_t wz;           // 旋转速度 rad/s
+    float vx_dir;
+    float vy_dir;
+    float target_offset_angle;
     float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
+    chassis_mode_e chassis_last_mode;
     float chassis_rotate_buff;
     float chassis_speed_buff;
     float power_limit;
+
 } Chassis_Ctrl_Cmd_s;
 
 // cmd发布的云台控制数据,由gimbal订阅
@@ -207,11 +229,85 @@ typedef struct
     float yaw;
     float pitch;
     float real_pitch;
+    float Last_Mode_Pitch;
     float chassis_rotate_wz;
     AutoAim_mode_e autoaim_mode;
     gimbal_mode_e gimbal_mode;
     float last_deep;
+    uint8_t Death_reInit;
 } Gimbal_Ctrl_Cmd_s;
+
+typedef struct
+{ 
+    uint16_t ch_0;
+    uint16_t ch_1;
+    uint16_t ch_2;
+    uint16_t ch_3;
+    uint8_t mode_sw;
+    uint8_t pause;
+    uint8_t fn_1;
+    uint8_t fn_2;
+    uint16_t wheel;
+    uint8_t trigger;
+}VT03_RC_t;
+
+typedef struct
+{ // 云台角度控制
+    uint8_t w ;
+    uint8_t s ;
+    uint8_t a ;
+    uint8_t d ;
+    uint8_t shift ;
+    uint8_t ctrl ;
+    uint8_t q ;
+    uint8_t e ;
+    uint8_t r ;
+    uint8_t f ;
+    uint8_t g ;
+    uint8_t z ;
+    uint8_t x ;
+    uint8_t c ;
+    uint8_t v ;
+    uint8_t b ;
+
+    int16_t mouse_x;
+    int16_t mouse_y;
+    int16_t mouse_z;
+    uint8_t mouse_left;
+    uint8_t mouse_right;
+    uint8_t mouse_middle;
+    uint16_t key;
+    uint32_t r_cnt;
+    VT03_RC_t RC;
+} Referee_Ctrl_Cmd_s;
+
+
+typedef __packed struct //21
+{
+    uint8_t sof_1;
+    uint8_t sof_2;
+    uint16_t ch_0:11;
+    uint16_t ch_1:11;
+    uint16_t ch_2:11;
+    uint16_t ch_3:11;
+    uint8_t mode_sw:2;
+    uint8_t pause:1;
+    uint8_t fn_1:1;
+    uint8_t fn_2:1;
+    uint16_t wheel:11;
+    uint8_t trigger:1;
+
+    int16_t mouse_x;
+    int16_t mouse_y;
+    int16_t mouse_z;
+    uint8_t mouse_left:2;
+    uint8_t mouse_right:2;
+    uint8_t mouse_middle:2;
+    uint16_t key;
+    uint16_t crc16;
+}VT03_t;
+
+
 
 // cmd发布的发射控制数据,由shoot订阅
 typedef struct
@@ -221,6 +317,10 @@ typedef struct
     friction_mode_e friction_mode;
     uint8_t rest_heat;
     float shoot_rate; // 连续发射的射频,unit per s,发/秒
+    uint16_t bullet_num;         // 剩余子弹数
+    float fric_rate;             // 摩擦轮目标转速
+    float bullet_real_speed;     // 子弹实际初速(m/s)
+    float dead_time;             // 射击保护间隔时间(s)
 } Shoot_Ctrl_Cmd_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/
@@ -261,6 +361,7 @@ typedef struct
 {
     attitude_t gimbal_imu_data;
     uint16_t yaw_motor_single_round_angle;
+    float offset_diff;
     float pitch_angle;
     uint8_t cmd_error_flag;
     float init_location;

@@ -36,12 +36,12 @@ float Cal_FollowControl_Feedforward(attitude_t gimbal_IMU_data, Gimbal_Ctrl_Cmd_
 #define DEFAULT_FILTER_FACTOR 0.9f  // 默认
 #define STEP_FILTER_FACTOR 0.4f      // 阶跃
 #define CORNER_FILTER_FACTOR 0.6f    // 三角形拐点 0.5f
-#define FAST_FILTER_FACTOR 0.7f     // 快速连续变化 0.7f 
+#define FAST_FILTER_FACTOR 0.6f     // 快速连续变化 0.7f 
 #define SLOW_FILTER_FACTOR 0.99f      // 静止
 
 // 前馈系数
-#define DEFAULT_FEEDFORWARD_FACTOR 0.0f  // 默认，超小变化 0
-#define STEP_FEEDFORWARD_FACTOR 1.5f     // 阶跃（识别到目标，与目标距离较远）,差多少，补大一点离目标的差值，小于45
-#define CORNER_FEEDFORWARD_FACTOR 0.2f   // 三角形拐点处（突然间变向），适当减小前馈
-#define FAST_FEEDFORWARD_FACTOR 120.0f   // 快速连续变化（车在走，头在追）,这个是对于cmd_delta，45-625
-#define SLOW_FEEDFORWARD_FACTOR 0.0f     // 小变化但有变化，差多少补多少，0.2-0.3
+#define DEFAULT_FEEDFORWARD_FACTOR 2.0f  // 默认，超小变化 0
+#define STEP_FEEDFORWARD_FACTOR 5.0f     // 阶跃（识别到目标，与目标距离较远）,差多少，补大一点离目标的差值，小于45
+#define CORNER_FEEDFORWARD_FACTOR 1.5f   // 三角形拐点处（突然间变向），适当减小前馈
+#define FAST_FEEDFORWARD_FACTOR 350.0f   // 快速连续变化（车在走，头在追）,这个是对于cmd_delta，45-625
+#define SLOW_FEEDFORWARD_FACTOR 0.5f     // 小变化但有变化，差多少补多少，0.2-0.3

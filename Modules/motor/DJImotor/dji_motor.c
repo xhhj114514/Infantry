@@ -7,7 +7,6 @@ static uint8_t idx = 0; // register idx,是该文件的全局电机索引,在注
 /* DJI电机的实例,此处仅保存指针,内存的分配将通过电机实例初始化时通过malloc()进行 */
 static DJIMotorInstance *dji_motor_instance[DJI_MOTOR_CNT] = {NULL}; // 会在control任务中遍历该指针数组进行pid计算
 static float m2006_init_flag=1;
-
 /**
  * @brief 由于DJI电机发送以四个一组的形式进行,故对其进行特殊处理,用6个(2can*3group)can_instance专门负责发送
  *        该变量将在 DJIMotorControl() 中使用,分组在 MotorSenderGrouping()中进行

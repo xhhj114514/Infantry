@@ -13,5 +13,6 @@
 
 #define RPM_2_ANGLE_PER_SEC 6.0f       // ×360°/60sec
 #define RPM_2_RAD_PER_SEC 0.104719755f // ×2pi/60sec
+#define BITF(n)    (1u << (n))
 
 #endif // !GENERAL_DEF_H

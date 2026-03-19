@@ -68,7 +68,7 @@ static void SuperCapRxCallback(CANInstance *_instance)
     SuperCap_Msg_s *Msg;
     rxbuff = _instance->rx_buff;
     Msg = &super_cap_instance->cap_msg;
-    Msg->vol = (int16_t)(rxbuff[0] << 8 | rxbuff[1]);
+    Msg->vol = (int16_t)(rxbuff[1] << 8 | rxbuff[0]);
 }
 
 SuperCapInstance *SuperCapInit(SuperCap_Init_Config_s *supercap_config)

@@ -9,6 +9,7 @@
 
 extern uint8_t UI_Seq;
 
+
 #pragma pack(1)
 typedef struct
 {
@@ -35,13 +36,16 @@ typedef struct
 	ext_game_robot_pos_t GameRobotPos;					   // 0x0203
 	ext_buff_musk_t BuffMusk;							   // 0x0204
 	ext_robot_hurt_t RobotHurt;							   // 0x0206
-	ext_shoot_data_t ShootData;							   // 0x0207
+	ext_shoot_data_t ShootData;							   // 
+	// ext_KeyBoard_Control_data_t KeyBoardControlData;	   //0x0303
+
 	ext_projectile_allowance_t ProjectileAllowance;
 
 	// 自定义交互数据的接收
 	Communicate_ReceiveData_t ReceiveData;
 
 	uint8_t init_flag;
+    VT03_t VT03;
 
 } referee_info_t;
 

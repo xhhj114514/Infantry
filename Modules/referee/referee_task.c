@@ -5,8 +5,27 @@
 #include "string.h"
 #include "cmsis_os.h"
 
+#include "can_comm.h"
+#include "general_def.h"
+
+static BoardCommInstance* Referee_Can_Comm;
+
 static Referee_Interactive_info_t *Interactive_data; // UI绘制需要的机器人状态数据
 static referee_info_t *referee_recv_info;            // 接收到的裁判系统数据
+static Referee_Ctrl_Cmd_s RefereeCTRL;
+
+
+
+static uint16_t ch_0;
+static uint16_t ch_1;
+static uint16_t ch_2;
+static uint16_t ch_3;
+static uint8_t mode_sw;
+static uint8_t pause;
+static uint8_t fn_1;
+static uint8_t fn_2;
+static uint16_t wheel;
+static uint8_t trigger;
 
 /**
  * @brief  判断各种ID，选择客户端ID
@@ -27,17 +46,70 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
 static void UIChangeCheck(Referee_Interactive_info_t *_Interactive_data); // 模式切换检测
 static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data); // 测试用函数，实现模式自动变化
 
-referee_info_t *UITaskInit(UART_HandleTypeDef *referee_usart_handle, Referee_Interactive_info_t *UI_data)
+referee_info_t *UITaskInit(UART_HandleTypeDef *referee_usart_handle, Referee_Interactive_info_t *UI_data )
 {
     referee_recv_info = RefereeInit(referee_usart_handle); // 初始化裁判系统的串口,并返回裁判系统反馈数据指针
     Interactive_data = UI_data;                            // 获取UI绘制需要的机器人状态数据
+
     referee_recv_info->init_flag = 1;
     return referee_recv_info;
 }
 
+#ifdef Cmd_Board
+void MYUIControl()
+{
+    RefereeCTRL.w    =  (referee_recv_info->VT03.key & BITF(0))  != 0;
+    RefereeCTRL.s     = (referee_recv_info->VT03.key & BITF(1))  != 0;
+    RefereeCTRL.a     = (referee_recv_info->VT03.key & BITF(2))  != 0;
+    RefereeCTRL.d     = (referee_recv_info->VT03.key & BITF(3))  != 0;
+    RefereeCTRL.shift = (referee_recv_info->VT03.key & BITF(4))  != 0;
+    RefereeCTRL.ctrl  = (referee_recv_info->VT03.key & BITF(5))  != 0;
+    RefereeCTRL.q     = (referee_recv_info->VT03.key & BITF(6))  != 0;
+    RefereeCTRL.e     = (referee_recv_info->VT03.key & BITF(7))  != 0;
+    RefereeCTRL.r     = (referee_recv_info->VT03.key & BITF(8))  != 0;
+    RefereeCTRL.f     = (referee_recv_info->VT03.key & BITF(9))  != 0;
+    RefereeCTRL.g     = (referee_recv_info->VT03.key & BITF(10)) != 0;
+    RefereeCTRL.z     = (referee_recv_info->VT03.key & BITF(11)) != 0;
+    RefereeCTRL.x     = (referee_recv_info->VT03.key & BITF(12)) != 0;
+    RefereeCTRL.c     = (referee_recv_info->VT03.key & BITF(13)) != 0;
+    RefereeCTRL.v     = (referee_recv_info->VT03.key & BITF(14)) != 0;
+    RefereeCTRL.b     = (referee_recv_info->VT03.key & BITF(15)) != 0;
+    RefereeCTRL.mouse_x = referee_recv_info->VT03.mouse_x;
+    RefereeCTRL.mouse_y = referee_recv_info->VT03.mouse_y;
+    RefereeCTRL.mouse_z = referee_recv_info->VT03.mouse_z;
+    RefereeCTRL.mouse_left = referee_recv_info->VT03.mouse_left;
+    RefereeCTRL.mouse_right = referee_recv_info->VT03.mouse_right;
+    RefereeCTRL.mouse_middle = referee_recv_info->VT03.mouse_middle;
+
+    RefereeCTRL.RC.ch_0 = referee_recv_info->VT03.ch_0;
+    RefereeCTRL.RC.ch_1 = referee_recv_info->VT03.ch_1;
+    RefereeCTRL.RC.ch_2 = referee_recv_info->VT03.ch_2;
+    RefereeCTRL.RC.ch_3 = referee_recv_info->VT03.ch_3;
+    RefereeCTRL.RC.mode_sw = referee_recv_info->VT03.mode_sw;//0 1 2  C N S
+    RefereeCTRL.RC.wheel = referee_recv_info->VT03.wheel;
+    RefereeCTRL.RC.fn_1 = referee_recv_info->VT03.fn_1;
+    RefereeCTRL.RC.fn_2 = referee_recv_info->VT03.fn_2;
+    RefereeCTRL.RC.pause = referee_recv_info->VT03.pause;
+    RefereeCTRL.RC.trigger = referee_recv_info->VT03.trigger;
+    RefereeCTRL.r_cnt = RefereeCTRL.r;
+	// ch_0 = referee_recv_info->VT03.ch_0;
+	// ch_1 = referee_recv_info->VT03.ch_1;
+	// ch_2 = referee_recv_info->VT03.ch_2;
+	// ch_3 = referee_recv_info->VT03.ch_3;
+	// mode_sw = referee_recv_info->VT03.mode_sw;
+}
+#endif
+
+
 void UITask()
 {
+#ifdef Cmd_Board
+    MYUIControl(referee_recv_info,&RefereeCTRL);
+    BoardCommSend(Referee_Can_Comm, (void *)&RefereeCTRL);
+#else 
     MyUIRefresh(referee_recv_info, Interactive_data);
+#endif
+
 }
 
 static Graph_Data_t UI_shoot_line[10]; // 射击准线
@@ -49,11 +121,29 @@ static Graph_Data_t UI_State_Cir[5];
 static Graph_Data_t UI_State_Rec[5];
 void MyUIInit()
 {
+#ifdef Cmd_Board
+    //双板通信Sender
+    BoardComm_Init_Config_s comm_conf = {
+        .can_config = {
+            .can_handle = &hcan1,
+            //云台的tx是底盘的rx，别搞错了！！！
+            .tx_id = 0x209,
+            .rx_id = 0x200,
+        },
+        .recv_data_len = sizeof(Referee_Ctrl_Cmd_s),
+        .send_data_len = sizeof(Referee_Ctrl_Cmd_s),
+    };
+    Referee_Can_Comm = BoardCommInit(&comm_conf);
+    referee_recv_info->init_flag = 1;
+#endif
+
     if (!referee_recv_info->init_flag)
         vTaskDelete(NULL); // 如果没有初始化裁判系统则直接删除ui任务
+
+
+#ifdef Gimbal_Board
     while (referee_recv_info->GameRobotState.robot_id == 0)
         osDelay(100); // 若还未收到裁判系统数据,等待一段时间后再检查
-
     DeterminRobotID();                                            // 确定ui要发送到的目标客户端
     UIDelete(&referee_recv_info->referee_id, UI_Data_Del_ALL, 0); // 清空UI
 
@@ -114,6 +204,7 @@ void MyUIInit()
 
     UIRectangleDraw(&UI_State_Rec[0], "sr0", UI_Graph_ADD, 6, UI_Color_White,3,600,300,1320,800);
     UIGraphRefresh(&referee_recv_info->referee_id,1, UI_State_Rec[0]);
+#endif
 }
 
 // 测试用函数，实现模式自动变化,用于检查该任务和裁判系统是否连接正常
@@ -316,6 +407,8 @@ static void MyUIRefresh(referee_info_t *referee_recv_info, Referee_Interactive_i
         _Interactive_data->Referee_Interactive_Flag.aim_flag = 0;
     }
 }
+
+
 
 /**
  * @brief  模式切换检测,模式发生切换时，对flag置位

@@ -15,10 +15,10 @@
 #include "controller.h"
 #include "QuaternionEKF.h"
 #include "spi.h"
+#include "stm32f4xx_it.h"
 #include "tim.h"
 #include "user_lib.h"
 #include "general_def.h"
-#include "master_process.h"
 
 static INS_t INS;
 static IMU_Param_t IMU_Param;
@@ -135,7 +135,7 @@ void INS_Task(void)
         INS.Gyro[X] = BMI088.Gyro[X];
         INS.Gyro[Y] = BMI088.Gyro[Y];
         INS.Gyro[Z] = BMI088.Gyro[Z];
-
+        
         // demo function,用于修正安装误差,可以不管,本demo暂时没用
         IMU_Param_Correction(&IMU_Param, INS.Gyro, INS.Accel);
 

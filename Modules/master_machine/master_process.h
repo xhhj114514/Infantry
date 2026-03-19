@@ -4,7 +4,7 @@
 #include "bsp_usart.h"
 #include "seasky_protocol.h"
 
-#define Minipc_Recv_sIZE 16u // 当前为固定值,36字节
+#define Minipc_Recv_sIZE 36u // 当前为固定值,36字节
 #define Minipc_Send_sIZE 36u
 
 #pragma pack(1)
@@ -48,7 +48,7 @@ typedef struct
 		float yaw;
 		float pitch;
 		int8_t shoot_flag;
-		// int32_t time;
+		int32_t time;
 	}Vision;
 	// struct
 	// {
@@ -87,9 +87,9 @@ typedef struct
 		float yaw;
 		float vx;
 		float vy;
-		uint16_t sentry_hp;
-		uint16_t hero_hp;
-		uint16_t infantry_hp;
+		uint16_t self_sentry_HP;
+		uint16_t self_hero_HP;
+		uint16_t self_infantry_HP;
 		uint16_t remain_time;
 		uint16_t remain_bullet;
 		uint8_t match_progress;
@@ -136,9 +136,12 @@ Minipc_Recv_s *minipcInit(UART_HandleTypeDef *_handle);
  */
 void SendMinipcData();
 
-void NAV_SEND(float vx, float vy, float yaw,uint8_t occupation,uint8_t detect_color);
 
-
+void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
+					uint16_t self_sentry_HP,uint16_t self_infantry_HP,uint16_t self_hero_HP,
+					uint16_t enermy_sentry_HP,uint16_t enermy_infantry_HP,uint16_t enermy_hero_HP,
+                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color
+					);
 
 
 

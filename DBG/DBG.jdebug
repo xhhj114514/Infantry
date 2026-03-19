@@ -4,8 +4,8 @@
 *                         www.segger.com                             *
 **********************************************************************
 
-File          : F:/DT46/WS/CMAKE/F4/Infantry/DBG/DBG.jdebug
-Created       : 27 Feb 2026 16:01
+File          : D:/TM32/DT46/WS/CMAKE/F4/Infantry/DBG/DBG.jdebug
+Created       : 13 Mar 2026 04:43
 Ozone Version : V3.24
 */
 
@@ -25,15 +25,15 @@ void OnProjectLoad (void) {
   Project.SetDevice ("Cortex-M4");
   Project.SetHostIF ("USB", "1045976289");
   Project.SetTargetIF ("SWD");
-  Project.SetTIFSpeed ("12 MHz");
-  Project.AddPathSubstitute ("F:/DT46/WS/CMAKE/F4/Infantry/DBG", "$(ProjectDir)");
-  Project.AddPathSubstitute ("f:/dt46/ws/cmake/f4/infantry/dbg", "$(ProjectDir)");
+  Project.SetTIFSpeed ("50 MHz");
+  Project.AddPathSubstitute ("D:/TM32/DT46/WS/CMAKE/F4/Infantry/DBG", "$(ProjectDir)");
+  Project.AddPathSubstitute ("d:/tm32/dt46/ws/cmake/f4/infantry/dbg", "$(ProjectDir)");
   Project.AddSvdFile ("$(InstallDir)/Config/CPU/Cortex-M4F.svd");
-  Project.AddSvdFile ("F:/DT46/WS/cmsis-svd-stm32/stm32f4/STM32F407.svd");
+  Project.AddSvdFile ("D:/TM32/DT46/WS/CMAKE/F4/Infantry/STM32F407.svd");
   //
   // User settings
   //
-  File.Open ("F:/DT46/WS/CMAKE/F4/Infantry/build/Debug/Infantry.elf");
+  File.Open ("D:/TM32/DT46/WS/CMAKE/F4/Infantry/build/Debug/Infantry.elf");
 }
 
 /*********************************************************************

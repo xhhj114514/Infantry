@@ -220,6 +220,8 @@ void MIMotorInstanceetMechPositionToZero(MIMotorInstance* motor)
     mi_sender_assignment[0].tx_buff[5]=0;
     mi_sender_assignment[0].tx_buff[6]=0;
     mi_sender_assignment[0].tx_buff[7]=0;
+    CANTransmit(&mi_sender_assignment[0], 1);
+
 }
 
 /**

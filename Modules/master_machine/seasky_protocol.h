@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "master_process.h"
 #define PROTOCOL_CMD_ID 0x5A
-#define SEND_VISION_ID 0xA5
+#define SEND_ID 0xA5
 
 
 #define NAV_PROTOCOL_START_ID  0XA5

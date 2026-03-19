@@ -1,4 +1,5 @@
 #include "rm_referee.h"
+#include "referee_protocol.h"
 #include "string.h"
 #include "crc_ref.h"
 #include "bsp_usart.h"
@@ -12,6 +13,16 @@
 static USARTInstance *referee_usart_instance; // 裁判系统串口实例
 static DaemonInstance *referee_daemon;		  // 裁判系统守护进程
 static referee_info_t referee_info;			  // 裁判系统数据
+// static uint16_t ch_0;
+// static uint16_t ch_1;
+// static uint16_t ch_2;
+// static uint16_t ch_3;
+// static uint8_t mode_sw;
+// static uint8_t pause;
+// static uint8_t fn_1;
+// static uint8_t fn_2;
+// static uint16_t wheel;
+// static uint8_t trigger;
 
 /**
  * @brief  读取裁判数据,中断中读取保证速度
@@ -27,7 +38,7 @@ static void JudgeReadData(uint8_t *buff)
 
 	// 写入帧头数据(5-byte),用于判断是否开始存储裁判数据
 	memcpy(&referee_info.FrameHeader, buff, LEN_HEADER);
-
+#ifdef Cmd_Board
 	// 判断帧头数据(0)是否为0xA5
 	if (buff[SOF] == REFEREE_SOF)
 	{
@@ -94,6 +105,28 @@ static void JudgeReadData(uint8_t *buff)
 			JudgeReadData(buff + sizeof(xFrameHeader) + LEN_CMDID + referee_info.FrameHeader.DataLength + LEN_TAIL);
 		}
 	}
+#endif //Cmd_Board
+
+#ifdef Gimbal_Board
+		// 判断VT03帧头数据(0)是否为0xA9
+	if (buff[SOF] == VT03_SOF1)
+	{
+		if(buff[SOF+1] == VT03_SOF2)//2B OFFSET
+		{
+			if(Verify_CRC16_Check_Sum(buff, 21))
+			{
+				memcpy(&referee_info.VT03,buff,sizeof(referee_info.VT03));
+			}
+		}
+	}
+#endif
+	//TEST
+	// ch_0 = referee_info.VT03.ch_0;
+	// ch_1 = referee_info.VT03.ch_1;
+	// ch_2 = referee_info.VT03.ch_2;
+	// ch_3 = referee_info.VT03.ch_3;
+	// mode_sw = referee_info.VT03.mode_sw;
+
 }
 
 /*裁判系统串口接收回调函数,解析数据 */
