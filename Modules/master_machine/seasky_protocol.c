@@ -78,8 +78,8 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
 
 #ifdef InfantryMode
     //VISION
-    // Append_CRC16_Check_Sum(&tx_buf[0],16);
-    // *tx_buf_len = 16;
+    Append_CRC16_Check_Sum(&tx_buf[0],16);
+    *tx_buf_len = 16;
 #endif
 #ifdef SentryMode
     memcpy( &tx_buf[14],&tx_data->Vision.vx, 4);
@@ -143,11 +143,11 @@ void get_protocol_info_vision(uint8_t *rx_buf,
         else {
 #ifdef InfantryMode
             //VISION
-            // memcpy(&recv_data->header, &rx_buf[0], 1);
-            // memcpy(&recv_data->Vision.pitch, &rx_buf[1], 4);
-            // memcpy(&recv_data->Vision.yaw, &rx_buf[5], 4);
-            // memcpy(&recv_data->Vision.shoot_flag, &rx_buf[9], 1);
-            // memcpy(&recv_data->Vision.time, &rx_buf[10], 4);
+            memcpy(&recv_data->header, &rx_buf[0], 1);
+            memcpy(&recv_data->Vision.yaw, &rx_buf[1], 4);
+            memcpy(&recv_data->Vision.pitch, &rx_buf[5], 4);
+            memcpy(&recv_data->Vision.shoot_flag, &rx_buf[9], 1);
+            memcpy(&recv_data->Vision.time, &rx_buf[10], 4);
 #endif
 #ifdef SentryMode
             //NAV UART

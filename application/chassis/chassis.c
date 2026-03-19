@@ -123,7 +123,15 @@ static uint16_t TESTPWR;
 // 9 lowest
 static void SendPowerData()
 {
-    power_data= 100;//chassis_cmd_recv.power_limit;
+#ifdef SentryMode
+    power_data= 100;//chassis_cmd_recv.power_limit;//Sentry--100Watt  Infantry--120Watt
+#endif
+
+#ifdef InfantryMode
+    power_data = 120;
+#endif
+
+
 }
 
 /**
