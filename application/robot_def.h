@@ -19,6 +19,11 @@
 /* 机器人重要参数定义,注意根据不同机器人进行修改,浮点数需要以.0或f结尾,无符号以u结尾 */
 // 云台参数
 
+
+#define InfantryDEF_BULLET_SPEED 25
+#define SentryDEF_BULLET_SPEED 25 
+
+
 #define ALIGNECD 1758  // 云台和底盘对齐指向相同方向时的电机编码器值,若对云台有机械改动需要修改
 #define ALIGNECD_GREATER_THAN_4096 0 // ALIGN_ECD值是否大于4096,是为1,否为0;用于计算云台偏转角度
 #define PITCH_HORIZON_ECD 3412      // 云台处于水平位置时编码器值,若对云台有机械改动需要修改
@@ -321,6 +326,7 @@ typedef struct
     float fric_rate;             // 摩擦轮目标转速
     float bullet_real_speed;     // 子弹实际初速(m/s)
     float dead_time;             // 射击保护间隔时间(s)
+    float bullet_speed;
 } Shoot_Ctrl_Cmd_s;
 
 /* ----------------gimbal/shoot/chassis发布的反馈数据----------------*/

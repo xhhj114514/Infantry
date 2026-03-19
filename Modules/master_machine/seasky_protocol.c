@@ -81,6 +81,7 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     // Append_CRC16_Check_Sum(&tx_buf[0],16);
     // *tx_buf_len = 16;
 #endif
+
 #ifdef SentryMode
     memcpy( &tx_buf[14],&tx_data->Vision.vx, 4);
     memcpy( &tx_buf[18],&tx_data->Vision.vy, 4);

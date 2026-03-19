@@ -155,6 +155,22 @@ static void ShootSpeedSet()
     {
         DJIMotorSetRef(friction_l, 38000);
         DJIMotorSetRef(friction_r, 38000);//25000->12
+#ifdef InfantryMode
+        if(shoot_cmd_recv.bullet_speed - InfantryDEF_BULLET_SPEED > 10)
+        {
+            DJIMotorSetRef(friction_l, 25000);
+            DJIMotorSetRef(friction_r, 25000);//25000->12
+        }
+#endif
+
+#ifdef SentryMode
+        if(shoot_cmd_recv.bullet_speed - SentryDEF_BULLET_SPEED > 10)
+        {
+            DJIMotorSetRef(friction_l, 25000);
+            DJIMotorSetRef(friction_r,25000);//25000->12
+        }
+#endif
+
     }
     else // 关闭摩擦轮
     {

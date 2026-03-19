@@ -858,7 +858,6 @@ void RobotCMDTask()
     // 根据gimbal的反馈值计算云台和底盘正方向的夹角,不需要传参,通过static私有变量完成
     CalcOffsetAngle();
     ControlDataDeal();
-    
 	// ch_0 = referee_data->VT03.ch_0;
 	// ch_1 = referee_data->VT03.ch_1;
 	// ch_2 = referee_data->VT03.ch_2;
@@ -866,6 +865,7 @@ void RobotCMDTask()
 	// mode_sw = referee_data->VT03.mode_sw;
         /**************************************    SendData    **************************************/
     // 设置巡航和视觉需要用到的数据
+    shoot_cmd_send.bullet_speed = referee_data->ShootData.bullet_speed;
     SendJudgeData(referee_data);
     NavSetMessage(
         chassis_fetch_data.real_vx,
