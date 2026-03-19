@@ -881,7 +881,8 @@ void RobotCMDTask()
         referee_data->GameState.stage_remain_time,
         shoot_cmd_send.bullet_num,
         referee_data->GameState.game_progress,
-        chassis_fetch_data.enemy_color
+        chassis_fetch_data.enemy_color,
+        referee_data->ShootData.bullet_speed
     );
     VisionSetAltitude();
         if(PC_PRSC % 5 == 0)

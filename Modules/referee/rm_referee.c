@@ -38,7 +38,7 @@ static void JudgeReadData(uint8_t *buff)
 
 	// 写入帧头数据(5-byte),用于判断是否开始存储裁判数据
 	memcpy(&referee_info.FrameHeader, buff, LEN_HEADER);
-#ifdef Cmd_Board
+#ifdef Gimbal_Board
 	// 判断帧头数据(0)是否为0xA5
 	if (buff[SOF] == REFEREE_SOF)
 	{
@@ -106,8 +106,6 @@ static void JudgeReadData(uint8_t *buff)
 		}
 	}
 #endif //Cmd_Board
-
-#ifdef Gimbal_Board
 		// 判断VT03帧头数据(0)是否为0xA9
 	if (buff[SOF] == VT03_SOF1)
 	{
@@ -119,7 +117,6 @@ static void JudgeReadData(uint8_t *buff)
 			}
 		}
 	}
-#endif
 	//TEST
 	// ch_0 = referee_info.VT03.ch_0;
 	// ch_1 = referee_info.VT03.ch_1;

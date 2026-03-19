@@ -9,17 +9,18 @@ static Minipc_Recv_s minipc_recv_data;
 static Minipc_Send_s minipc_send_data;
 static DaemonInstance *minipc_daemon_instance;
 
-
+static float BBINITSPEED = 25.0;
 void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
 					uint16_t self_sentry_HP,uint16_t self_infantry_HP,uint16_t self_hero_HP,
 					uint16_t enermy_sentry_HP,uint16_t enermy_infantry_HP,uint16_t enermy_hero_HP,
-                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color
+                    uint16_t remain_time,uint16_t remain_bullet,uint8_t game_progress,uint8_t detect_color,float bspeed
 					)
 {
     minipc_send_data.header=SEND_ID;
     minipc_send_data.Vision.vx=vx;
     minipc_send_data.Vision.vy=vy;
     minipc_send_data.Vision.yaw=yaw;
+    minipc_send_data.Vision.bspeed = 24.0;
     // minipc_send_data.Vision.enemy_hero_HP=enermy_hero_HP;
     // minipc_send_data.Vision.enemy_infantry_HP=enermy_infantry_HP;
     // minipc_send_data.Vision.enemy_sentry_HP=enermy_sentry_HP;
@@ -36,6 +37,14 @@ void NavSetMessage(float vx, float vy, float yaw,uint8_t occupation,
     minipc_send_data.Vision.occupation =occupation;   // 区域占领状态
     minipc_send_data.Vision.match_progress=game_progress;
     minipc_send_data.Vision.detect_color=detect_color;
+    if(bspeed != 0)
+    {
+        minipc_send_data.Vision.bspeed = bspeed;
+    }
+    else {
+        minipc_send_data.Vision.bspeed = BBINITSPEED;
+    }
+    
 }
 
 void VisionSetFlag(uint8_t color)
