@@ -45,7 +45,7 @@ void OSTaskInit()
     osThreadDef(daemontask, StartDAEMONTASK, osPriorityNormal, 0, 128);
     daemonTaskHandle = osThreadCreate(osThread(daemontask), NULL);
 #endif
-    osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024);
+    osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024+128);
     robotTaskHandle = osThreadCreate(osThread(robottask), NULL);
 
     osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 1024);

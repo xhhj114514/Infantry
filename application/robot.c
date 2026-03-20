@@ -27,7 +27,7 @@ void RobotInit()
     RobotCMDInit();
 #ifdef Gimbal_Board
     GimbalInit();
-    // ShootInit();
+    ShootInit();
 
    ChassisInit();
 #endif
@@ -44,7 +44,7 @@ void RobotTask()
     RobotCMDTask();
 #ifdef Gimbal_Board
     GimbalTask();
-    // ShootTask();
+    ShootTask();
     ChassisTask();
 #endif
 }

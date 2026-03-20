@@ -136,7 +136,6 @@ void MyUIInit()
     Referee_Can_Comm = BoardCommInit(&comm_conf);
     referee_recv_info->init_flag = 1;
 #endif
-
     if (!referee_recv_info->init_flag)
         vTaskDelete(NULL); // 如果没有初始化裁判系统则直接删除ui任务
 

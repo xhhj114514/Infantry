@@ -85,18 +85,21 @@ void RobotCMDInit()
     rc_data = RemoteControlInit(&huart3);   // 修改为对应串口,注意如果是自研板dbus协议串口需选用添加了反相器的那个
     minipc_recv_data = minipcInit(&huart1); // 视觉通信串口
     memset(minipc_recv_data, 0, sizeof(Minipc_Recv_s));
+#endif
+#ifdef InfantryMode
             //双板通信Sender
-    // BoardComm_Init_Config_s comm_conf = {
-    //     .can_config = {
-    //         .can_handle = &hcan1,
-    //         //云台的tx是底盘的rx，别搞错了！！！
-    //         .tx_id = 0x200,
-    //         .rx_id = 0x209,
-    //     },
-    //     .recv_data_len = sizeof(Referee_Ctrl_Cmd_s),
-    //     .send_data_len = sizeof(Referee_Ctrl_Cmd_s),
-    // };
-    // Referee_can_commrecv = BoardCommInit(&comm_conf);
+    BoardComm_Init_Config_s comm_conf = {
+        .can_config = {
+            .can_handle = &hcan1,
+            //云台的tx是底盘的rx，别搞错了！！！
+            .tx_id = 0x200,
+            .rx_id = 0x209,
+        },
+        .recv_data_len = sizeof(Referee_Ctrl_Cmd_s),
+        .send_data_len = sizeof(Referee_Ctrl_Cmd_s),
+    };
+    Referee_can_commrecv = BoardCommInit(&comm_conf);
+
 #endif
 
     gimbal_cmd_pub = PubRegister("gimbal_cmd", sizeof(Gimbal_Ctrl_Cmd_s));
@@ -199,7 +202,7 @@ static void BasicSet()
     //发射基本模式设定
     shoot_cmd_send.shoot_mode = SHOOT_ON;
     shoot_cmd_send.friction_mode = FRICTION_ON;
-    shoot_cmd_send.shoot_rate=8;
+    shoot_cmd_send.shoot_rate=4;
     chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
 
 }
@@ -234,21 +237,21 @@ static void ChassisRC()
     {
         chassis_cmd_send.vx = -1*chassis_cmd_send.vy_dir;
         chassis_cmd_send.vy = 1*chassis_cmd_send.vx_dir;
-        chassis_cmd_send.offset_angle -= 81;
+        chassis_cmd_send.offset_angle -= 88;
 
     }
     else if(gimbal_fetch_data.offset_diff >=130 && gimbal_fetch_data.offset_diff <= 190)//3072
     {
         chassis_cmd_send.vx = -1*chassis_cmd_send.vx_dir;
         chassis_cmd_send.vy = -1*chassis_cmd_send.vy_dir;
-        chassis_cmd_send.offset_angle -= 170;
+        chassis_cmd_send.offset_angle -= 180;
  
     }
-    else if(gimbal_fetch_data.offset_diff >=225 || gimbal_fetch_data.offset_diff <= -70)//3072
+    else if(gimbal_fetch_data.offset_diff >=241 || gimbal_fetch_data.offset_diff <= -75)//3072
     {
         chassis_cmd_send.vx = 1*chassis_cmd_send.vy_dir;
         chassis_cmd_send.vy = -1*chassis_cmd_send.vx_dir;
-        chassis_cmd_send.offset_angle -= 260;
+        chassis_cmd_send.offset_angle -= 267;
 
     }
     else
@@ -258,10 +261,8 @@ static void ChassisRC()
 
     }
 
-    chassis_cmd_send.vx_dir = 2.0f * (float)rc_data[TEMP].rc.rocker_left_y ;// /660.0   * 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f; // _水平方向
-    chassis_cmd_send.vy_dir =-2.0f * (float)rc_data[TEMP].rc.rocker_left_x ;// /660.0   * 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f; // 竖直方向
-
-
+    chassis_cmd_send.vx_dir = 5.0f * (float)rc_data[TEMP].rc.rocker_left_y  /660.0   * 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f; // _水平方向
+    chassis_cmd_send.vy_dir =-5.0f * (float)rc_data[TEMP].rc.rocker_left_x  /660.0   * 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f; // 竖直方向
 }
 
 static void GetGimbalInitImu()
@@ -288,7 +289,7 @@ static void RoundPatrol()
 void FoundEnermy()
 {
     gimbal_cmd_send.autoaim_mode = AUTO_ON;
-    if (abs(minipc_recv_data->Vision.yaw) > 5 && abs(minipc_recv_data->Vision.yaw) < 20)
+    if (abs(minipc_recv_data->Vision.yaw) >= 0 && abs(minipc_recv_data->Vision.yaw) < 40)
     {
         gimbal_cmd_send.yaw -= (0.032f * minipc_recv_data->Vision.yaw) + 0.00001; // 往右获得的yaw是减 //0.0036
     }
@@ -699,7 +700,7 @@ static void KeyControl()
         chassis_cmd_send.chassis_rotate_buff= chassis_rotate_buff;
     }
 
-    switch (Referee_can_CTRL.r_cnt % 2) 
+    switch (Referee_can_CTRL.e % 2) 
     {
     case 0:
         chassis_cmd_send.chassis_mode = CHASSIS_FOLLOW_GIMBAL_YAW;
@@ -708,7 +709,7 @@ static void KeyControl()
         chassis_cmd_send.chassis_mode = CHASSIS_ROTATE;
     }
 
-    if(Referee_can_CTRL.q)
+    if(Referee_can_CTRL.mouse_middle)
     {
         DataLebel.reverse_flag=1;
         shoot_cmd_send.loader_mode = LOAD_REVERSE;
@@ -747,13 +748,13 @@ static void MouseKeySet()
  */
 static void SentrySet()
 {
-    // if(referee_data->GameState.game_progress == 4)
-    // {
+    if(referee_data->GameState.game_progress == 4)
+    {
         Sentry_ChassisAC();
         ChassisRotateSet();
         ShootAC();
         OLD_SENTRY_GimbalAC();
-    // }
+    }
 }
 
 void Deathcheck()
@@ -899,6 +900,11 @@ void RobotCMDTask()
 
 #ifdef Gimbal_Board
     // Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
+    // if(Referee_can_CTRL.Referee_ReInit_flag)
+    // {
+    //     referee_data= UITaskInit(&huart6,&ui_data);
+    //     Referee_can_CTRL.Referee_ReInit_flag = 0;
+    // }
 #endif
 
 }

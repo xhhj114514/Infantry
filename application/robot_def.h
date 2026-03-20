@@ -279,6 +279,10 @@ typedef struct
     uint16_t key;
     uint32_t r_cnt;
     VT03_RC_t RC;
+
+    uint8_t Referee_ReInit_flag;
+    uint8_t Referee_InitControl_flag;
+
 } Referee_Ctrl_Cmd_s;
 
 

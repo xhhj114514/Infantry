@@ -135,7 +135,7 @@ static void ShootRateSet()
     // 拨盘反转,对速度闭环（待测试）
     case LOAD_REVERSE:
         DJIMotorOuterLoop(loader, SPEED_LOOP);
-        DJIMotorSetRef(loader, -1000);
+        DJIMotorSetRef(loader, -2000);
         break;
     default:
         while (1)
