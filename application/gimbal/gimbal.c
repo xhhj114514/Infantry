@@ -132,7 +132,7 @@ static void GimbalStateSet()
         {
             //MIMotorModeSwitch(pitch_motor,1);
             MIMotorEnable(pitch_motor);
-            gimbal_feedback_data.init_location=gimbal_IMU_data->Roll;
+            gimbal_feedback_data.init_location=-gimbal_IMU_data->Roll;
 
             //MIMotorSetPid(pitch_motor,pich_motor->motor_controller.angle_PID.Kp,4,pitch_motor->motor_controller.speed_PID.Kp,pitch_motor->motor_controller.speed_PID.Ki);
             motor_init=1;

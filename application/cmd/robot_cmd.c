@@ -24,6 +24,7 @@
 #include "can_comm.h"
 
 #include "chassis.h"
+#include "ui_g.h"
 #include <string.h>
 
 
@@ -202,9 +203,8 @@ static void BasicSet()
     //发射基本模式设定
     shoot_cmd_send.shoot_mode = SHOOT_ON;
     shoot_cmd_send.friction_mode = FRICTION_ON;
-    shoot_cmd_send.shoot_rate=4;
+    shoot_cmd_send.shoot_rate=3;
     chassis_cmd_send.power_limit=referee_data->GameRobotState.chassis_power_limit;
-
 }
 
 
@@ -221,7 +221,7 @@ static void GimbalRC()
 static void INFANTRY_GimbalAC()
 {
     gimbal_cmd_send.yaw = gimbal_fetch_data.gimbal_imu_data.YawTotalAngle - minipc_recv_data->Vision.yaw;   //往右获得的yaw是减
-    gimbal_cmd_send.pitch = gimbal_fetch_data.pitch_angle - 0.2*minipc_recv_data->Vision.pitch*DEGREE_2_RAD;
+    gimbal_cmd_send.pitch = gimbal_fetch_data.pitch_angle + 0.8*minipc_recv_data->Vision.pitch*DEGREE_2_RAD;
 }
 
 static void ChassisRC()
@@ -288,7 +288,7 @@ static void RoundPatrol()
 
 void FoundEnermy()
 {
-    gimbal_cmd_send.autoaim_mode = AUTO_ON;
+    gimbal_cmd_send.autoaim_mode = TARGET_FOUND;
     if (abs(minipc_recv_data->Vision.yaw) >= 0 && abs(minipc_recv_data->Vision.yaw) < 40)
     {
         gimbal_cmd_send.yaw -= (0.032f * minipc_recv_data->Vision.yaw) + 0.00001; // 往右获得的yaw是减 //0.0036
@@ -350,7 +350,7 @@ void OLD_SENTRY_GimbalAC()
             DataLebel.ACEntryPoint = 0;
             RoundPatrol();
         }
-        gimbal_cmd_send.autoaim_mode = AUTO_OFF;
+        gimbal_cmd_send.autoaim_mode = NOTARGET;
         // else
         // {
         //     MidRoundPatrol();
@@ -504,18 +504,19 @@ static void RemoteControlSet()
 
     if(switch_is_up(rc_data[TEMP].rc.switch_left)) 
     {
-        chassis_cmd_send.chassis_mode=CHASSIS_ROTATE;
-        if(chassis_fetch_data.power_flag==1)
-        {
-            chassis_cmd_send.chassis_rotate_buff= -2;
-        }
-        else
-        {
-            chassis_cmd_send.chassis_rotate_buff= -1.0;
-        }
+        // chassis_cmd_send.chassis_mode=CHASSIS_ROTATE;
+        // if(chassis_fetch_data.power_flag==1)
+        // {
+        //     chassis_cmd_send.chassis_rotate_buff= -2;
+        // }
+        // else
+        // {
+        //     chassis_cmd_send.chassis_rotate_buff= -1.0;
+        // }
         ChassisRC();
-        ChassisRotateSet();
-        GimbalRC();
+        // ChassisRotateSet();
+        // GimbalRC();
+        INFANTRY_GimbalAC();
 
     }
     else if(switch_is_mid(rc_data[TEMP].rc.switch_left))
@@ -524,6 +525,7 @@ static void RemoteControlSet()
         if(chassis_fetch_data.power_flag==1)
         {
             chassis_cmd_send.chassis_rotate_buff= 2;
+            
         }
         else
         {
@@ -547,8 +549,10 @@ static void RemoteControlSet()
 }
 static void NoneAutoMouseControl()
 {
-    gimbal_cmd_send.yaw -= Referee_can_CTRL.mouse_x/ 32767.0f*50; //(float)rc_data[TEMP].mouse.x / 660 *3 ; 
-    gimbal_cmd_send.pitch -= Referee_can_CTRL.mouse_y/32767.0f*0.8; //(float)rc_data[TEMP].mouse.y / 660/57 ;
+    gimbal_cmd_send.yaw -= Referee_can_CTRL.mouse_x/ 32767.0f*350; //(float)rc_data[TEMP].mouse.x / 660 *3 ; 
+    gimbal_cmd_send.pitch -= Referee_can_CTRL.mouse_y/32767.0f*1.5; //(float)rc_data[TEMP].mouse.y / 660/57 ;
+    if(Referee_can_CTRL.mouse_middle){DataLebel.reverse_flag = 1;}
+    else DataLebel.reverse_flag = 0;
     if(Referee_can_CTRL.mouse_left ==1)
     {
         if(DataLebel.reverse_flag==1)
@@ -572,24 +576,29 @@ static void MouseControl()
     {
         if(DataLebel.aim_flag!=1)
         {
-            gimbal_cmd_send.autoaim_mode=AUTO_ON;
+            gimbal_cmd_send.autoaim_mode=TARGET_FOUND;
         }
         else
         {
-            gimbal_cmd_send.autoaim_mode=FIND_Enermy;
+            gimbal_cmd_send.autoaim_mode=FINDEnermy;
         }
     }
     else
     {
-        gimbal_cmd_send.autoaim_mode=AUTO_OFF;
+        gimbal_cmd_send.autoaim_mode=NOTARGET;
     }
 
-    if(gimbal_cmd_send.autoaim_mode==AUTO_ON||gimbal_cmd_send.autoaim_mode==FIND_Enermy)
+    if(gimbal_cmd_send.autoaim_mode==TARGET_FOUND||gimbal_cmd_send.autoaim_mode==FINDEnermy)
     {
         // AutoAimSet();
         if(DataLebel.aim_flag!=1)
         {
             NoneAutoMouseControl();
+        }
+        if(DataLebel.fire_flag || minipc_recv_data->Vision.yaw != 0 || minipc_recv_data->Vision.pitch != 0)
+        {
+           INFANTRY_GimbalAC();
+        //    ShootAC();
         }
     }
     else
@@ -639,8 +648,8 @@ static void KeyControl()
         chassis_cmd_send.vy = 1*chassis_cmd_send.vy_dir;
 
     }
-    chassis_cmd_send.vx_dir = (Referee_can_CTRL.w * 5.0 - Referee_can_CTRL.s * 5.0)*chassis_speed_buff* 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f;; 
-    chassis_cmd_send.vy_dir = (Referee_can_CTRL.a * 5.0 - Referee_can_CTRL.d * 5.0)*chassis_speed_buff* 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f;;
+    chassis_cmd_send.vx_dir = (Referee_can_CTRL.w * 7.0 - Referee_can_CTRL.s * 7.0)*chassis_speed_buff* 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f;; 
+    chassis_cmd_send.vy_dir = (Referee_can_CTRL.a * 7.0 - Referee_can_CTRL.d * 7.0)*chassis_speed_buff* 4.0f * REDUCTION_RATIO_WHEEL * 360.0f / PERIMETER_WHEEL * 1000.0f;;
 
     ChassisRotateSet();
     switch (referee_data->GameRobotState.robot_level)
@@ -811,6 +820,10 @@ static void ControlDataDeal()
     {
         AnythingStop();
     }
+    if(rc_data[TEMP].rc.switch_left == 0)//LOST
+    {
+        MouseKeySet();
+    }
 }
 
 static void EnemyJudge()
@@ -826,11 +839,14 @@ static void EnemyJudge()
 }
 static void SendToUIData()
 {
-    ui_data.autoaim_mode=gimbal_cmd_send.autoaim_mode;
     ui_data.chassis_mode=chassis_cmd_send.chassis_mode;
     ui_data.loader_mode=shoot_cmd_send.loader_mode;
     ui_data.shoot_mode=shoot_cmd_send.shoot_mode;
     ui_data.gimbal_mode=gimbal_cmd_send.gimbal_mode;
+    ui_update_hp(referee_data->GameRobotState.current_HP, referee_data->GameRobotState.maximum_HP);
+    ui_update_chassis_mode(chassis_cmd_send.chassis_mode);
+    ui_update_loader_mode(shoot_cmd_send.loader_mode);
+
 }
 //TEST
 // static uint16_t ch_0;
@@ -843,10 +859,10 @@ static void SendToUIData()
 // static uint8_t fn_2;
 // static uint16_t wheel;
 // static uint8_t trigger;
-static uint8_t OCCU = 0;
-static uint8_t match=0;
-static uint16_t HP = 400;
-static uint16_t TIME=300;
+// static uint8_t OCCU = 0;
+// static uint8_t match=0;
+// static uint16_t HP = 400;
+// static uint16_t TIME=300;
 
 /* 机器人核心控制任务,200Hz频率运行(必须高于视觉发送频率) */
 void RobotCMDTask()
@@ -868,6 +884,7 @@ void RobotCMDTask()
         /**************************************    SendData    **************************************/
     // 设置巡航和视觉需要用到的数据
     SendJudgeData(referee_data);
+    
     NavSetMessage(
         chassis_fetch_data.real_vx,
         chassis_fetch_data.real_vy,
@@ -885,7 +902,7 @@ void RobotCMDTask()
         chassis_fetch_data.enemy_color,
         referee_data->ShootData.bullet_speed
     );
-    VisionSetAltitude();
+    VisionSetAltitude(referee_data->ShootData.bullet_speed);
         if(PC_PRSC % 5 == 0)
         {
             SendMinipcData(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
@@ -899,7 +916,7 @@ void RobotCMDTask()
     SendToUIData();
 
 #ifdef Gimbal_Board
-    // Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
+    Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
     // if(Referee_can_CTRL.Referee_ReInit_flag)
     // {
     //     referee_data= UITaskInit(&huart6,&ui_data);

@@ -17,7 +17,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-
+set(CMAKE_C_FLAGS   "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS "" CACHE STRING "" FORCE)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # # # 强制将 compile_commands.json 复制到项目根目录,需要ctrl+shift+p重启clangd语言服务器
@@ -118,6 +119,7 @@ USER_ADD_DIR(${CMAKE_SOURCE_DIR}/Modules/remote)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/Modules/super_cap)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/Modules/Trajectory_planning)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/Modules/can_comm)
+USER_ADD_DIR(${CMAKE_SOURCE_DIR}/Modules/ui)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/chassis)
 USER_ADD_DIR(${CMAKE_SOURCE_DIR}/application/cmd)

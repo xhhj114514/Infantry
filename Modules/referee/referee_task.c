@@ -7,6 +7,8 @@
 
 #include "can_comm.h"
 #include "general_def.h"
+#include "ui.h"
+#include "ui_g.h"
 
 static BoardCommInstance* Referee_Can_Comm;
 
@@ -48,6 +50,7 @@ static void RobotModeTest(Referee_Interactive_info_t *_Interactive_data); // 测
 
 referee_info_t *UITaskInit(UART_HandleTypeDef *referee_usart_handle, Referee_Interactive_info_t *UI_data )
 {
+    ui_init_g();
     referee_recv_info = RefereeInit(referee_usart_handle); // 初始化裁判系统的串口,并返回裁判系统反馈数据指针
     Interactive_data = UI_data;                            // 获取UI绘制需要的机器人状态数据
 
@@ -107,7 +110,9 @@ void UITask()
     MYUIControl(referee_recv_info,&RefereeCTRL);
     BoardCommSend(Referee_Can_Comm, (void *)&RefereeCTRL);
 #else 
-    MyUIRefresh(referee_recv_info, Interactive_data);
+
+
+    ui_update_g();
 #endif
 
 }
@@ -121,6 +126,7 @@ static Graph_Data_t UI_State_Cir[5];
 static Graph_Data_t UI_State_Rec[5];
 void MyUIInit()
 {
+    ui_init_g();
 #ifdef Cmd_Board
     //双板通信Sender
     BoardComm_Init_Config_s comm_conf = {
@@ -140,70 +146,70 @@ void MyUIInit()
         vTaskDelete(NULL); // 如果没有初始化裁判系统则直接删除ui任务
 
 
-#ifdef Gimbal_Board
-    while (referee_recv_info->GameRobotState.robot_id == 0)
-        osDelay(100); // 若还未收到裁判系统数据,等待一段时间后再检查
-    DeterminRobotID();                                            // 确定ui要发送到的目标客户端
-    UIDelete(&referee_recv_info->referee_id, UI_Data_Del_ALL, 0); // 清空UI
+// #ifdef Gimbal_Board
+//     while (referee_recv_info->GameRobotState.robot_id == 0)
+//         osDelay(100); // 若还未收到裁判系统数据,等待一段时间后再检查
+//     DeterminRobotID();                                            // 确定ui要发送到的目标客户端
+//     UIDelete(&referee_recv_info->referee_id, UI_Data_Del_ALL, 0); // 清空UI
 
-    // 绘制发射基准线 955
-    UILineDraw(&UI_shoot_line[0], "sl0", UI_Graph_ADD, 7, UI_Color_White, 2, shoot_line_location[0],540, shoot_line_location[0], 320);
-    UILineDraw(&UI_shoot_line[1], "sl1", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[1], 990, shoot_line_location[1]);
-    UILineDraw(&UI_shoot_line[2], "sl2", UI_Graph_ADD, 7, UI_Color_White, 2, 860, shoot_line_location[2], 1060, shoot_line_location[2]);
-    UILineDraw(&UI_shoot_line[3], "sl3", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 900, shoot_line_location[3], 1020, shoot_line_location[3]);
-    UILineDraw(&UI_shoot_line[4], "sl4", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[4], 990, shoot_line_location[4]);
-    UIGraphRefresh(&referee_recv_info->referee_id, 5, UI_shoot_line[0], UI_shoot_line[1], UI_shoot_line[2], UI_shoot_line[3], UI_shoot_line[4]);
-    UILineDraw(&UI_shoot_line[5], "sl5", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[5], 990, shoot_line_location[5]);
-    UILineDraw(&UI_shoot_line[6], "sl6", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[6], 990, shoot_line_location[6]);
-    UILineDraw(&UI_shoot_line[7], "sl7", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 950, shoot_line_location[7], 970, shoot_line_location[7]);
-    UILineDraw(&UI_shoot_line[8], "sl8", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 950, shoot_line_location[8], 970, shoot_line_location[8]);
-    UILineDraw(&UI_shoot_line[9], "sl9", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 950, shoot_line_location[9], 970, shoot_line_location[9]);
-    UIGraphRefresh(&referee_recv_info->referee_id, 5, UI_shoot_line[5], UI_shoot_line[6], UI_shoot_line[7], UI_shoot_line[8], UI_shoot_line[9]);
+//     // 绘制发射基准线 955
+//     UILineDraw(&UI_shoot_line[0], "sl0", UI_Graph_ADD, 7, UI_Color_White, 2, shoot_line_location[0],540, shoot_line_location[0], 320);
+//     UILineDraw(&UI_shoot_line[1], "sl1", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[1], 990, shoot_line_location[1]);
+//     UILineDraw(&UI_shoot_line[2], "sl2", UI_Graph_ADD, 7, UI_Color_White, 2, 860, shoot_line_location[2], 1060, shoot_line_location[2]);
+//     UILineDraw(&UI_shoot_line[3], "sl3", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 900, shoot_line_location[3], 1020, shoot_line_location[3]);
+//     UILineDraw(&UI_shoot_line[4], "sl4", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[4], 990, shoot_line_location[4]);
+//     UIGraphRefresh(&referee_recv_info->referee_id, 5, UI_shoot_line[0], UI_shoot_line[1], UI_shoot_line[2], UI_shoot_line[3], UI_shoot_line[4]);
+//     UILineDraw(&UI_shoot_line[5], "sl5", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[5], 990, shoot_line_location[5]);
+//     UILineDraw(&UI_shoot_line[6], "sl6", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 930, shoot_line_location[6], 990, shoot_line_location[6]);
+//     UILineDraw(&UI_shoot_line[7], "sl7", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 950, shoot_line_location[7], 970, shoot_line_location[7]);
+//     UILineDraw(&UI_shoot_line[8], "sl8", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 950, shoot_line_location[8], 970, shoot_line_location[8]);
+//     UILineDraw(&UI_shoot_line[9], "sl9", UI_Graph_ADD, 7, UI_Color_Yellow, 2, 950, shoot_line_location[9], 970, shoot_line_location[9]);
+//     UIGraphRefresh(&referee_recv_info->referee_id, 5, UI_shoot_line[5], UI_shoot_line[6], UI_shoot_line[7], UI_shoot_line[8], UI_shoot_line[9]);
 
-    UICircleDraw(&UI_State_Cir[0],"sa0",UI_Graph_ADD,9,UI_Color_White,5,130,740,10);
-    UICircleDraw(&UI_State_Cir[1],"sa1",UI_Graph_ADD,9,UI_Color_White,5,130,690,10);
-    UICircleDraw(&UI_State_Cir[2],"sa2",UI_Graph_ADD,9,UI_Color_White,5,130,640,10);
-    UICircleDraw(&UI_State_Cir[3],"sa3",UI_Graph_ADD,9,UI_Color_White,5,130,590,10);
-    UICircleDraw(&UI_State_Cir[4],"sa4",UI_Graph_ADD,9,UI_Color_White,5,130,540,10);
-    UIGraphRefresh(&referee_recv_info->referee_id,5,UI_State_Cir[0],UI_State_Cir[1], UI_State_Cir[2],UI_State_Cir[3],UI_State_Cir[4]);
+//     UICircleDraw(&UI_State_Cir[0],"sa0",UI_Graph_ADD,9,UI_Color_White,5,130,740,10);
+//     UICircleDraw(&UI_State_Cir[1],"sa1",UI_Graph_ADD,9,UI_Color_White,5,130,690,10);
+//     UICircleDraw(&UI_State_Cir[2],"sa2",UI_Graph_ADD,9,UI_Color_White,5,130,640,10);
+//     UICircleDraw(&UI_State_Cir[3],"sa3",UI_Graph_ADD,9,UI_Color_White,5,130,590,10);
+//     UICircleDraw(&UI_State_Cir[4],"sa4",UI_Graph_ADD,9,UI_Color_White,5,130,540,10);
+//     UIGraphRefresh(&referee_recv_info->referee_id,5,UI_State_Cir[0],UI_State_Cir[1], UI_State_Cir[2],UI_State_Cir[3],UI_State_Cir[4]);
 
 
-    // 绘制车辆状态标志指示
-    UICharDraw(&UI_State_sta[0], "ss0", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 750, "chassis:");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[0]);
-    UICharDraw(&UI_State_sta[1], "ss1", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 700, "gimbal:");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[1]);
-    UICharDraw(&UI_State_sta[2], "ss2", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 650, "shoot:");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[2]);
-    UICharDraw(&UI_State_sta[3], "ss3", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 600, "loader:");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[3]);
-    UICharDraw(&UI_State_sta[4], "ss4", UI_Graph_ADD, 6, UI_Color_White, 15, 2, 150, 550, "autoaim:");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[4]);
+//     // 绘制车辆状态标志指示
+//     UICharDraw(&UI_State_sta[0], "ss0", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 750, "chassis:");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[0]);
+//     UICharDraw(&UI_State_sta[1], "ss1", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 700, "gimbal:");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[1]);
+//     UICharDraw(&UI_State_sta[2], "ss2", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 650, "shoot:");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[2]);
+//     UICharDraw(&UI_State_sta[3], "ss3", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 150, 600, "loader:");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[3]);
+//     UICharDraw(&UI_State_sta[4], "ss4", UI_Graph_ADD, 6, UI_Color_White, 15, 2, 150, 550, "autoaim:");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[4]);
 
-    // 绘制车辆状态标志指示
-    UICharDraw(&UI_State_sta[5], "ss5", UI_Graph_ADD, 8, UI_Color_Yellow, 7, 2, 1070, 440, "2m");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[5]);
-    UICharDraw(&UI_State_sta[6], "ss6", UI_Graph_ADD, 8, UI_Color_Yellow, 7, 2, 1070, 400, "3m");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[6]);
-    UICharDraw(&UI_State_sta[7], "ss7", UI_Graph_ADD, 8, UI_Color_Yellow, 7, 2, 1070, 320, "4m");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[7]);
+//     // 绘制车辆状态标志指示
+//     UICharDraw(&UI_State_sta[5], "ss5", UI_Graph_ADD, 8, UI_Color_Yellow, 7, 2, 1070, 440, "2m");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[5]);
+//     UICharDraw(&UI_State_sta[6], "ss6", UI_Graph_ADD, 8, UI_Color_Yellow, 7, 2, 1070, 400, "3m");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[6]);
+//     UICharDraw(&UI_State_sta[7], "ss7", UI_Graph_ADD, 8, UI_Color_Yellow, 7, 2, 1070, 320, "4m");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_sta[7]);
 
-    // 绘制车辆状态标志，动态
-    // 由于初始化时xxx_last_mode默认为0，所以此处对应UI也应该设为0时对应的UI，防止模式不变的情况下无法置位flag，导致UI无法刷新
-    UICharDraw(&UI_State_dyn[0], "sd0", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 750, "off      ");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[0]);
-    UICharDraw(&UI_State_dyn[1], "sd1", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 700, "off      ");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[1]);
-    UICharDraw(&UI_State_dyn[2], "sd2", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 650, "off      ");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[2]);
-    UICharDraw(&UI_State_dyn[3], "sd3", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 600, "off      ");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[3]);
-    UICharDraw(&UI_State_dyn[4], "sd4", UI_Graph_ADD, 6, UI_Color_White, 15, 2, 270, 550, "off      ");
-    UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[4]);
+//     // 绘制车辆状态标志，动态
+//     // 由于初始化时xxx_last_mode默认为0，所以此处对应UI也应该设为0时对应的UI，防止模式不变的情况下无法置位flag，导致UI无法刷新
+//     UICharDraw(&UI_State_dyn[0], "sd0", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 750, "off      ");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[0]);
+//     UICharDraw(&UI_State_dyn[1], "sd1", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 700, "off      ");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[1]);
+//     UICharDraw(&UI_State_dyn[2], "sd2", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 650, "off      ");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[2]);
+//     UICharDraw(&UI_State_dyn[3], "sd3", UI_Graph_ADD, 8, UI_Color_White, 15, 2, 270, 600, "off      ");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[3]);
+//     UICharDraw(&UI_State_dyn[4], "sd4", UI_Graph_ADD, 6, UI_Color_White, 15, 2, 270, 550, "off      ");
+//     UICharRefresh(&referee_recv_info->referee_id, UI_State_dyn[4]);
 
-    UIRectangleDraw(&UI_State_Rec[0], "sr0", UI_Graph_ADD, 6, UI_Color_White,3,600,300,1320,800);
-    UIGraphRefresh(&referee_recv_info->referee_id,1, UI_State_Rec[0]);
-#endif
+//     UIRectangleDraw(&UI_State_Rec[0], "sr0", UI_Graph_ADD, 6, UI_Color_White,3,600,300,1320,800);
+//     UIGraphRefresh(&referee_recv_info->referee_id,1, UI_State_Rec[0]);
+// #endif
 }
 
 // 测试用函数，实现模式自动变化,用于检查该任务和裁判系统是否连接正常

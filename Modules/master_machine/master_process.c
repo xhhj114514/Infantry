@@ -52,11 +52,12 @@ void VisionSetFlag(uint8_t color)
     // minipc_send_data.Vision.detect_color=color;
 }
 
-void VisionSetAltitude()
+void VisionSetAltitude(float spd)
 {
     minipc_send_data.Vision.pitch = QEKF_INS.Pitch;
     minipc_send_data.Vision.roll = QEKF_INS.Roll;
     minipc_send_data.Vision.yaw = QEKF_INS.Yaw;
+    minipc_send_data.Vision.bspeed = spd;
 }
 
 static USARTInstance *minipc_usart_instance;

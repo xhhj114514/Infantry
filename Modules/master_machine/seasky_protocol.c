@@ -75,11 +75,12 @@ void get_protocol_send_Vision_data(uint16_t send_id,        // 信号id
     memcpy( &tx_buf[2],&tx_data->Vision.roll, 4);
     memcpy( &tx_buf[6],&tx_data->Vision.pitch, 4);
     memcpy( &tx_buf[10],&tx_data->Vision.yaw, 4);
+    memcpy( &tx_buf[14],&tx_data->Vision.bspeed, 4);
 
 #ifdef InfantryMode
     //VISION
-    Append_CRC16_Check_Sum(&tx_buf[0],16);
-    *tx_buf_len = 16;
+    Append_CRC16_Check_Sum(&tx_buf[0],20);
+    *tx_buf_len = 20;
 #endif
 #ifdef SentryMode
     memcpy( &tx_buf[14],&tx_data->Vision.vx, 4);

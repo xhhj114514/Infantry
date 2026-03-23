@@ -104,9 +104,12 @@ static void ShootStateSet()
 {
     if (shoot_cmd_recv.shoot_mode == SHOOT_OFF)
     {
-        DJIMotorStop(friction_l);
-        DJIMotorStop(friction_r);
-        DJIMotorStop(loader);
+        // DJIMotorStop(friction_l);
+        // DJIMotorStop(friction_r);
+        // DJIMotorStop(loader);
+        DJIMotorSetRef(friction_l, 0);
+        DJIMotorSetRef(friction_r, 0);
+        DJIMotorSetRef(loader, 0);
     }
     else // 恢复运行
     {

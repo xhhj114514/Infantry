@@ -6,6 +6,7 @@
 #include "general_def.h"
 #include "bsp_dwt.h"
 #include "arm_math.h"
+#include "ui_g.h"
 
 // #include "rm_referee.h"
 // #include "referee_task.h"
@@ -172,6 +173,7 @@ static void LimitChassisOutput()
         chassis_feedback_data.power_flag=0; 
     }
 
+
     // // 完成功率限制后进行电机参考输入设定
     DJIMotorSetRef(motor_lf, chassis_info.vt_lf);
     DJIMotorSetRef(motor_rf, chassis_info.vt_rf);
@@ -196,6 +198,7 @@ static void SendChassisData()
     // 步骤2：底盘坐标系→云台坐标系转换（关键步骤）
     chassis_feedback_data.real_vx = chassis_info.vx * chassis_info.cos_theta + chassis_info.vy * chassis_info.sin_theta;
     chassis_feedback_data.real_vy = -chassis_info.vx * chassis_info.sin_theta + chassis_info.vy * chassis_info.cos_theta;
+    ui_update_cap_msg(cap->cap_msg);
 }
 
 
@@ -229,6 +232,7 @@ void SendJudgeData(referee_info_t* referee_Data)
     chassis_feedback_data.right_bullet_heat = referee_Data->PowerHeatData.shooter_17mm_barrel_heat;
     chassis_feedback_data.bullet_num = referee_Data->ProjectileAllowance.projectile_allowance_17mm;
     chassis_feedback_data.bullet_speed = referee_Data->ShootData.bullet_speed;
+    chassis_feedback_data.enemy_color = COLOR_RED;
 }
 
 /* 机器人底盘控制核心任务 */

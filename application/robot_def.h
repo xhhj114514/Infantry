@@ -2,6 +2,7 @@
 #include "arm_math_types.h"
 #include "referee_protocol.h"
 #include "remote_control.h"
+#include "super_cap.h"
 #ifndef ROBOT_DEF_H
 #define ROBOT_DEF_H
 
@@ -12,7 +13,7 @@
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
 #define ONE_BOARD // 单板控制整车
 #define Gimbal_Board   //Cmd_Board SentryMode全自动设置为Gimbal_Board  GIMBAL->vt03  CMD->referee
-#define SentryMode
+#define InfantryMode
 
 #define VISION_USE_UART // 使用串口发送视觉数据
 
@@ -43,6 +44,14 @@
  * @brief 这些枚举类型和结构体会作为CMD控制数据和各应用的反馈数据的一部分
  *
  */
+
+ typedef enum
+{
+    NOTARGET,
+    TARGET_FOUND,
+    TARGET_LOCKED,
+    FINDEnermy,
+} Aim_Mode_e;
 
  typedef enum
 {
@@ -231,7 +240,7 @@ typedef struct
     float real_pitch;
     float Last_Mode_Pitch;
     float chassis_rotate_wz;
-    AutoAim_mode_e autoaim_mode;
+    Aim_Mode_e autoaim_mode;
     gimbal_mode_e gimbal_mode;
     float last_deep;
     uint8_t Death_reInit;
