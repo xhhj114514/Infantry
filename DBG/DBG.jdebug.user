@@ -1,25 +1,21 @@
 
-OpenDocument="main.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/Src/main.c", Line=66
-OpenDocument="rm_referee.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/Modules/referee/rm_referee.c", Line=58
-OpenDocument="robot_def.h", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/robot_def.h", Line=189
-OpenDocument="robot_cmd.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/cmd/robot_cmd.c", Line=842
-OpenDocument="chassis.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/chassis/chassis.c", Line=186
-OpenDocument="chassis.h", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/chassis/chassis.h", Line=0
-OpenDocument="robot_task.h", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/robot_task.h", Line=38
-OpenDocument="gimbal.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/gimbal/gimbal.c", Line=24
-OpenDocument="robot.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/robot.c", Line=0
-OpenDocument="referee_task.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/Modules/referee/referee_task.c", Line=57
-OpenDocument="usbd_cdc_if.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/Src/usbd_cdc_if.c", Line=266
+OpenDocument="bsp_can.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/bsp/can/bsp_can.c", Line=201
+OpenDocument="can_comm.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/Modules/can_comm/can_comm.c", Line=36
+OpenDocument="main.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/Src/main.c", Line=70
+OpenDocument="robot_cmd.c", FilePath="D:/TM32/DT46/WS/CMAKE/F4/Infantry/application/cmd/robot_cmd.c", Line=893
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=806, h=236, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=806, h=249, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=394, h=500, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Data Sampling", DockArea=RIGHT, x=0, y=1, w=806, h=249, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
-OpenWindow="Timeline", DockArea=BOTTOM, x=0, y=0, w=1920, h=300, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 ns / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="1768;0", PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1744;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="1756;0"
-OpenWindow="Console", DockArea=BOTTOM, x=0, y=1, w=1920, h=145, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Call Stack", DockArea=RIGHT, x=0, y=0, w=582, h=402, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=1, w=582, h=360, TabPos=1, TopOfStack=1, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Watched Data 1", DockArea=LEFT, x=0, y=0, w=517, h=777, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Data Sampling", DockArea=RIGHT, x=0, y=1, w=582, h=360, TabPos=0, TopOfStack=0, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, VisibleTab=0, UniformSampleSpacing=0
+OpenWindow="Timeline", DockArea=BOTTOM, x=1, y=0, w=1374, h=169, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=1, DataPaneShown=1, PowerPaneShown=0, CodePaneShown=0, PinCursor="Cursor Movable", TimePerDiv="1 ns / Div", TimeStampFormat="Time", DataGraphDrawAsPoints=0, DataGraphLegendShown=1, DataGraphUniformSampleSpacing=0, DataGraphLegendPosition="1221;0", PowerGraphDrawAsPoints=0, PowerGraphLegendShown=0, PowerGraphAvgFilterTime=Off, PowerGraphAvgFilterLen=Off, PowerGraphUniformSampleSpacing=0, PowerGraphLegendPosition="1744;0", CodeGraphLegendShown=0, CodeGraphLegendPosition="1756;0"
+OpenWindow="Console", DockArea=BOTTOM, x=0, y=0, w=545, h=169, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 TableHeader="Data Sampling Table", SortCol="Index", SortOrder="ASCENDING", VisibleCols=["Index";"Time"], ColWidths=[100;100]
-TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[100;100;100;100;100;100;110;126;100]
+TableHeader="Data Sampling Setup", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Type";"Value";"Min";"Max";"Average";"# Changes";"Min. Change";"Max. Change"], ColWidths=[100;100;100;100;100;100;100;100;100]
 TableHeader="Call Stack", SortCol="Function", SortOrder="ASCENDING", VisibleCols=["Function";"Stack Frame";"Source";"PC";"Return Address";"Stack Used"], ColWidths=[201;150;173;111;112;100]
 TableHeader="Power Sampling", SortCol="Index", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Refresh"], ColWidths=[209;144;133;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
+TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[200;100;100;874]
+WatchedExpression="JY61P_UPLOAD", RefreshRate=5, Window=Watched Data 1
+WatchedExpression="Referee_can_commrecv", RefreshRate=5, Window=Watched Data 1

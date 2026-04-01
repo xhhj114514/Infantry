@@ -294,6 +294,11 @@ typedef struct
 
 } Referee_Ctrl_Cmd_s;
 
+typedef struct 
+{
+    float yawAngle;
+}IMU_Trans_t;
+
 
 typedef __packed struct //21
 {

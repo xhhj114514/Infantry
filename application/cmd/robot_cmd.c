@@ -1,4 +1,5 @@
 // app
+#include "QuaternionEKF.h"
 #include "can_comm.h"
 #include "fast_math_functions.h"
 #include "mi_motor.h"
@@ -76,7 +77,8 @@ static uint8_t YAW_ECD_GREATER_THAN_4096;
 
 
 static BoardCommInstance* Referee_can_commrecv;
-static Referee_Ctrl_Cmd_s Referee_can_CTRL; 
+static Referee_Ctrl_Cmd_s Referee_can_CTRL;
+static IMU_Trans_t JY61P_UPLOAD; 
 
 void RobotCMDInit()
 {
@@ -93,11 +95,11 @@ void RobotCMDInit()
         .can_config = {
             .can_handle = &hcan1,
             //云台的tx是底盘的rx，别搞错了！！！
-            .tx_id = 0x200,
+            .tx_id = 0x201,
             .rx_id = 0x209,
         },
-        .recv_data_len = sizeof(Referee_Ctrl_Cmd_s),
-        .send_data_len = sizeof(Referee_Ctrl_Cmd_s),
+        .recv_data_len = sizeof(IMU_Trans_t),
+        .send_data_len = sizeof(IMU_Trans_t),
     };
     Referee_can_commrecv = BoardCommInit(&comm_conf);
 
@@ -913,15 +915,15 @@ void RobotCMDTask()
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(shoot_cmd_pub, (void *)&shoot_cmd_send);
     PubPushMessage(gimbal_cmd_pub, (void *)&gimbal_cmd_send);
-    SendToUIData();
+    // SendToUIData();
 
 #ifdef Gimbal_Board
-    Referee_can_CTRL = *(Referee_Ctrl_Cmd_s*)BoardCommGet(Referee_can_commrecv);
+    memcpy(JY61P_UPLOAD.yawAngle,&Referee_can_commrecv->raw_recvbuf);
+    JY61P_UPLOAD = *(IMU_Trans_t*)BoardCommGet(Referee_can_commrecv);
     // if(Referee_can_CTRL.Referee_ReInit_flag)
     // {
     //     referee_data= UITaskInit(&huart6,&ui_data);
     //     Referee_can_CTRL.Referee_ReInit_flag = 0;
     // }
 #endif
-
 }

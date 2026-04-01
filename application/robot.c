@@ -26,10 +26,10 @@ void RobotInit()
     BSPInit();
     RobotCMDInit();
 #ifdef Gimbal_Board
-    GimbalInit();
-    ShootInit();
+    // GimbalInit();
+    // ShootInit();
 
-   ChassisInit();
+//    ChassisInit();
 #endif
 
     OSTaskInit(); // 创建基础任务
@@ -43,8 +43,8 @@ void RobotTask()
 {
     RobotCMDTask();
 #ifdef Gimbal_Board
-    GimbalTask();
-    ShootTask();
-    ChassisTask();
+    // GimbalTask();
+    // ShootTask();
+    // ChassisTask();
 #endif
 }

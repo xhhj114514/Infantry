@@ -56,12 +56,12 @@ static void BoardCommRxCallback(CANInstance *_instance)
             // 如果buff里本tail的位置等于CAN_COMM_TAIL
             if (comm->raw_recvbuf[comm->recv_buf_len - 1] == CAN_COMM_TAIL)
             { // 通过校验,复制数据到unpack_data中
-                if (comm->raw_recvbuf[comm->recv_buf_len - 2] == crc_8(comm->raw_recvbuf + 2, comm->recv_data_len))
-                { // 数据量大的话考虑使用DMA
+                // if (comm->raw_recvbuf[comm->recv_buf_len - 2] == crc_8(comm->raw_recvbuf + 2, comm->recv_data_len))
+                // { // 数据量大的话考虑使用DMA
                     memcpy(comm->unpacked_recv_data, comm->raw_recvbuf + 2, comm->recv_data_len);
                     comm->update_flag = 1;           // 数据更新flag置为1
                     DaemonReload(comm->comm_daemon); // 重载daemon,避免数据更新后一直不被读取而导致数据更新不及时
-                }
+                // }
             }
             BoardCommResetRx(comm);
             return; // 重置状态然后返回

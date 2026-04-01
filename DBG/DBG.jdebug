@@ -23,7 +23,7 @@ void OnProjectLoad (void) {
   // Dialog-generated settings
   //
   Project.SetDevice ("Cortex-M4");
-  Project.SetHostIF ("USB", "1045976289");
+  Project.SetHostIF ("USB", "1040849617");
   Project.SetTargetIF ("SWD");
   Project.SetTIFSpeed ("50 MHz");
   Project.AddPathSubstitute ("D:/TM32/DT46/WS/CMAKE/F4/Infantry/DBG", "$(ProjectDir)");

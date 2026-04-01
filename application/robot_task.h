@@ -39,8 +39,8 @@ void OSTaskInit()
     insTaskHandle = osThreadCreate(osThread(instask), NULL); // 由于是阻塞读取传感器,为姿态解算设置较高优先级,确保以1khz的频率执行
     // 后续修改为读取传感器数据准备好的中断处理,
 #ifdef Gimbal_Board
-    osThreadDef(motortask, StartMOTORTASK, osPriorityNormal, 0, 1024);
-    motorTaskHandle = osThreadCreate(osThread(motortask), NULL);
+    // osThreadDef(motortask, StartMOTORTASK, osPriorityNormal, 0, 1024);
+    // motorTaskHandle = osThreadCreate(osThread(motortask), NULL);
 
     osThreadDef(daemontask, StartDAEMONTASK, osPriorityNormal, 0, 128);
     daemonTaskHandle = osThreadCreate(osThread(daemontask), NULL);
@@ -48,8 +48,8 @@ void OSTaskInit()
     osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024);
     robotTaskHandle = osThreadCreate(osThread(robottask), NULL);
 
-    osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 1024);
-    uiTaskHandle = osThreadCreate(osThread(uitask), NULL);
+    // osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 1024);
+    // uiTaskHandle = osThreadCreate(osThread(uitask), NULL);
 
 }
 

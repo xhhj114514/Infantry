@@ -48,8 +48,11 @@
 			"args": [
 				"-f",
                 "${workspaceFolder}/openocd.cfg",
+                "-c", "adapter speed 20000",              
+                "-c", "init",                           
+                "-c", "halt",                               
                 "-c",
-                "program ./build/Debug/${workspaceFolderBasename}.elf verify reset exit"
+                "program ./build/Debug/${workspaceFolderBasename}.bin 0x08000000 reset exit"
 			],
             "dependsOn": "build",
 			"problemMatcher": [],
