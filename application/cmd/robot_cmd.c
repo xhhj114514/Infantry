@@ -918,7 +918,7 @@ void RobotCMDTask()
     // SendToUIData();
 
 #ifdef Gimbal_Board
-    memcpy(JY61P_UPLOAD.yawAngle,&Referee_can_commrecv->raw_recvbuf);
+    memcpy(&JY61P_UPLOAD.yawAngle,&Referee_can_commrecv->raw_recvbuf,sizeof(float));
     JY61P_UPLOAD = *(IMU_Trans_t*)BoardCommGet(Referee_can_commrecv);
     // if(Referee_can_CTRL.Referee_ReInit_flag)
     // {
