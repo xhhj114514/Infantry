@@ -1,177 +1,178 @@
 #include "chassis.h"
-#include "robot_def.h"
-#include "dji_motor.h"
-#include "super_cap.h"
+
 #include "message_center.h"
-#include "general_def.h"
-#include "bsp_dwt.h"
-#include "arm_math.h"
+#include "robot_def.h"
+#include "smotor.h"
+#include "motor_def.h"
+#include "wheel_leg_math.h"
 
-/* 根据robot_def.h中的macro自动计算的参数 */
-#define HALF_WHEEL_BASE (WHEEL_BASE / 2.0f)     // 半轴距
-#define HALF_TRACK_WIDTH (TRACK_WIDTH / 2.0f)   // 半轮距
-#define PERIMETER_WHEEL (RADIUS_WHEEL * 2 * PI) // 轮子周长
+#include <math.h>
+#include <stddef.h>
 
-/* 底盘应用包含的模块和信息存储,底盘是单例模式,因此不需要为底盘建立单独的结构体 */
-static Publisher_t *chassis_pub;                    // 用于发布底盘的数据
-static Subscriber_t *chassis_sub;                   // 用于订阅底盘的控制命令
-static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制命令
-static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数据
-static float sin_theta, cos_theta;//麦轮解算用
-
-static float chassis_rotate_buff;
-
-static SuperCapInstance *cap;                                       // 超级电容
-static uint16_t power_data;
-static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back
-/* 用于自旋变速策略的时间变量 */
-static float t;
-
-/* 私有函数计算的中介变量,设为静态避免参数传递的开销 */
-static float chassis_vx, chassis_vy;     // 将云台系的速度投影到底盘
-static float vt_lf, vt_rf, vt_lb, vt_rb; // 底盘速度解算后的临时输出,待进行限幅
-
-void ChassisInit()
+typedef struct
 {
-    Motor_Init_Config_s chassis_motor_config = {
-        .can_init_config.can_handle = &hcan1,
-        .controller_param_init_config = {
-            .speed_PID = {
-                .Kp = 10, // 4.5
-                .Ki = 0,  // 0
-                .Kd = 0,  // 0
-                .IntegralLimit = 3000,
-                .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut = 12000,
-            },
-            .current_PID = {
-                .Kp = 0.5, // 0.4
-                .Ki = 0,   // 0
-                .Kd = 0,
-                .IntegralLimit = 3000,
-                .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut = 15000,
-            },
+    SMotorInstance *motor;
+    float offset_angle_rad;
+    float direction;
+} ChassisMotor_s;
+
+static const uint8_t motor_id[WHEEL_LEG_MOTOR_COUNT] = WHEEL_LEG_MOTOR_IDS;
+static float motor_offset_rad[WHEEL_LEG_MOTOR_COUNT] = WHEEL_LEG_MOTOR_OFFSETS_RAD;
+static const float motor_direction[WHEEL_LEG_MOTOR_COUNT] = WHEEL_LEG_MOTOR_DIRECTIONS;
+
+static ChassisMotor_s chassis_motor[WHEEL_LEG_MOTOR_COUNT];
+static ChassisLegPosition_s leg_position;
+static Publisher_t *chassis_pub;
+static Chassis_Upload_Data_s chassis_feedback;
+
+static uint8_t RegisterMotor(uint8_t index)
+{
+    const uint8_t is_wheel = index == WHEEL_LEG_LEFT_WHEEL || index == WHEEL_LEG_RIGHT_WHEEL;
+    Motor_Init_Config_s config = {
+        .can_init_config = {
+            .can_handle = WHEEL_LEG_CAN_HANDLE,
+            .tx_id = motor_id[index],
         },
         .controller_setting_init_config = {
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
-            .outer_loop_type = SPEED_LOOP,
-            .close_loop_type = SPEED_LOOP | CURRENT_LOOP,
+            .outer_loop_type = ANGLE_LOOP,
+            .close_loop_type = ANGLE_LOOP | SPEED_LOOP,
+            .motor_reverse_flag = motor_direction[index] < 0.0f ?
+                                      MOTOR_DIRECTION_REVERSE : MOTOR_DIRECTION_NORMAL,
+            .feedback_reverse_flag = FEEDBACK_DIRECTION_NORMAL,
         },
-        .motor_type = M3508,
+        .controller_param_init_config = {
+            .angle_PID = {
+                .Kp = CHASSIS_MOTOR_POSITION_PID_KP,
+                .Ki = CHASSIS_MOTOR_POSITION_PID_KI,
+                .Kd = CHASSIS_MOTOR_POSITION_PID_KD,
+                .MaxOut = CHASSIS_MOTOR_POSITION_MAX_SPEED_RPM,
+                .IntegralLimit = CHASSIS_MOTOR_POSITION_MAX_SPEED_RPM,
+                .Improve = CHASSIS_MOTOR_PID_IMPROVE,
+            },
+            .speed_PID = {
+                .Kp = CHASSIS_MOTOR_SPEED_PID_KP,
+                .Ki = CHASSIS_MOTOR_SPEED_PID_KI,
+                .Kd = CHASSIS_MOTOR_SPEED_PID_KD,
+                .MaxOut = is_wheel ? WHEEL_LEG_WHEEL_MAX_VOLTAGE_V * 1000.0f :
+                                     SMOTOR_MAX_VOLTAGE_MV,
+                .IntegralLimit = is_wheel ? WHEEL_LEG_WHEEL_MAX_VOLTAGE_V * 1000.0f :
+                                           SMOTOR_MAX_VOLTAGE_MV,
+                .Improve = CHASSIS_MOTOR_PID_IMPROVE,
+            },
+        },
+    };
+    SMotor_Torque_Config_s torque_config = {
+        .max_voltage_v = is_wheel ? WHEEL_LEG_WHEEL_MAX_VOLTAGE_V : WHEEL_LEG_JOINT_MAX_VOLTAGE_V,
+        .torque_ratio_nm_per_v = is_wheel ? WHEEL_LEG_WHEEL_TORQUE_RATIO_NM_PER_V :
+                                            WHEEL_LEG_JOINT_TORQUE_RATIO_NM_PER_V,
+        .output_ratio = WHEEL_LEG_MOTOR_OUTPUT_RATIO,
+        .calc_rev_volt = is_wheel ? SMotorCalcRevVolt2805 : SMotorCalcRevVolt4310,
     };
 
-    chassis_motor_config.can_init_config.tx_id = 4;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
-    motor_lf = DJIMotorInit(&chassis_motor_config);
+    chassis_motor[index].motor = SMotorInit(&config);
+    SMotorStop(chassis_motor[index].motor);
+    chassis_motor[index].offset_angle_rad = motor_offset_rad[index];
+    chassis_motor[index].direction = motor_direction[index];
+    if (chassis_motor[index].motor == NULL ||
+        !SMotorConfigureTorque(chassis_motor[index].motor, &torque_config))
+        return 0;
 
-    chassis_motor_config.can_init_config.tx_id = 3;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_rf = DJIMotorInit(&chassis_motor_config);
+    SMotorSetPos(chassis_motor[index].motor, CHASSIS_MOTOR_TARGET_POSITION_RAD);
+    SMotorStop(chassis_motor[index].motor);
+    return 1;
+}
 
-    chassis_motor_config.can_init_config.tx_id = 1;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
-    motor_lb = DJIMotorInit(&chassis_motor_config);
+static void FillMotorFeedback(void)
+{
+    leg_position.motor_online_mask = 0;
 
-    chassis_motor_config.can_init_config.tx_id = 2;
-    chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
-    motor_rb = DJIMotorInit(&chassis_motor_config);
+    for (uint8_t i = 0; i < WHEEL_LEG_MOTOR_COUNT; ++i)
+    {
+        const ChassisMotor_s *binding = &chassis_motor[i];
+        SMotorStop(binding->motor);
+        leg_position.motor_angle_rad[i] = NAN;
+        if (!SMotorIsOnline(binding->motor))
+            continue;
 
-    SuperCap_Init_Config_s capconfig = {
-            .can_config = {
-                .can_handle = &hcan1,
-                .rx_id = 0x311,
-                .tx_id = 0x310,
-            },
-            .recv_data_len = sizeof(int16_t),
-            .send_data_len = sizeof(uint16_t),
-        };
-     cap=SuperCapInit(&capconfig);
-    chassis_sub = SubRegister("chassis_cmd", sizeof(Chassis_Ctrl_Cmd_s));
+        leg_position.motor_online_mask |= (uint8_t)(1U << i);
+        // Use the absolute encoder angle; SMotor's boot-time zero is not the linkage zero.
+        leg_position.motor_angle_rad[i] =
+            (binding->motor->measure.position_rad - binding->offset_angle_rad) * binding->direction;
+    }
+}
+
+static void UpdateLegPosition(uint8_t joint_0, uint8_t joint_1, ChassisLegPose_s *leg)
+{
+    const uint8_t joint_mask = (uint8_t)((1U << joint_0) | (1U << joint_1));
+    float position[2];
+
+    leg->length_m = NAN;
+    leg->angle_rad = NAN;
+    leg->valid = 0;
+    if ((leg_position.motor_online_mask & joint_mask) != joint_mask)
+        return;
+    if (!isfinite(leg_position.motor_angle_rad[joint_0]) ||
+        !isfinite(leg_position.motor_angle_rad[joint_1]))
+        return;
+
+    // Joint 1 is phi1 and joint 0 is phi4, matching the wheel-leg controller.
+    WheelLegPosition(leg_position.motor_angle_rad[joint_1],
+                     leg_position.motor_angle_rad[joint_0], position);
+    if (!isfinite(position[0]) || !isfinite(position[1]) || position[0] <= 0.0f)
+        return;
+
+    leg->length_m = position[0];
+    leg->angle_rad = position[1];
+    leg->valid = 1;
+}
+
+void ChassisInit(void)
+{
+    WheelLegControlInit();
+    WheelLegSetCommand(0.0f, 0.0f, WHEEL_LEG_DEFAULT_LENGTH_M);
+    WheelLegSetEnabled(0);
+    motor_offset_rad[WHEEL_LEG_LEFT_JOINT_0] =  WHEEL_LEG_LEFT_JOINT_0_OFFSET_RAD;
+    motor_offset_rad[WHEEL_LEG_LEFT_JOINT_1] =
+        WHEEL_LEG_LEFT_JOINT_1_OFFSET_RAD;
+    
+    motor_offset_rad[WHEEL_LEG_RIGHT_JOINT_0] =
+        WHEEL_LEG_RIGHT_JOINT_0_OFFSET_RAD;
+    motor_offset_rad[WHEEL_LEG_RIGHT_JOINT_1] =
+        WHEEL_LEG_RIGHT_JOINT_1_OFFSET_RAD;
+    for (uint8_t i = 0; i < WHEEL_LEG_MOTOR_COUNT; ++i)
+        RegisterMotor(i);
+
+    FillMotorFeedback();
+    UpdateLegPosition(WHEEL_LEG_LEFT_JOINT_0, WHEEL_LEG_LEFT_JOINT_1, &leg_position.left_leg);
+    UpdateLegPosition(WHEEL_LEG_RIGHT_JOINT_0, WHEEL_LEG_RIGHT_JOINT_1, &leg_position.right_leg);
     chassis_pub = PubRegister("chassis_feed", sizeof(Chassis_Upload_Data_s));
 }
-#define LF_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
-#define RF_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE - CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
-#define LB_CENTER ((HALF_TRACK_WIDTH + CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
-#define RB_CENTER ((HALF_TRACK_WIDTH - CENTER_GIMBAL_OFFSET_X + HALF_WHEEL_BASE + CENTER_GIMBAL_OFFSET_Y) * DEGREE_2_RAD)
 
-static void ChassisStateSet()
+const ChassisLegPosition_s *ChassisGetLegPosition(void)
 {
-    if (chassis_cmd_recv.chassis_mode == CHASSIS_ZERO_FORCE)
-    { // 如果出现重要模块离线或遥控器设置为急停,让电机停止
-        DJIMotorStop(motor_lf);
-        DJIMotorStop(motor_rf);
-        DJIMotorStop(motor_lb);
-        DJIMotorStop(motor_rb);
-    }
-    else
-    { // 正常工作
-        DJIMotorEnable(motor_lf);
-        DJIMotorEnable(motor_rf);
-        DJIMotorEnable(motor_lb);
-        DJIMotorEnable(motor_rb);
-    }
+    return &leg_position;
 }
 
-static void SendPowerData()
+void ChassisSetCommand(float speed_mps, float yaw_speed_rad_s, float leg_length_m)
 {
-    power_data=chassis_cmd_recv.power_limit;
+    WheelLegSetCommand(speed_mps, yaw_speed_rad_s, leg_length_m);
 }
 
-/**
- * @brief 计算每个底盘电机的输出,正运动学解算
- *        
- */
-static void MecanumCalculate()
-{   
-    cos_theta = arm_cos_f32(chassis_cmd_recv.offset_angle * DEGREE_2_RAD);
-    sin_theta = arm_sin_f32(chassis_cmd_recv.offset_angle * DEGREE_2_RAD);
-
-    chassis_vx = chassis_cmd_recv.vx * cos_theta - chassis_cmd_recv.vy * sin_theta; 
-    chassis_vy = chassis_cmd_recv.vx * sin_theta + chassis_cmd_recv.vy * cos_theta;
-
-    vt_lf = chassis_vx - chassis_vy - chassis_cmd_recv.wz * LF_CENTER;
-    vt_lb = chassis_vx + chassis_vy - chassis_cmd_recv.wz * LB_CENTER;
-    vt_rb = chassis_vx - chassis_vy + chassis_cmd_recv.wz * RB_CENTER;
-    vt_rf = chassis_vx + chassis_vy + chassis_cmd_recv.wz * RF_CENTER;
-}
-/**
- * @brief 根据裁判系统和电容剩余容量对输出进行限制并设置电机参考值
- *
- */
-static void LimitChassisOutput()
+void ChassisEnable(uint8_t enabled)
 {
-
-    if(cap->cap_msg.vol<24&&cap->cap_msg.vol>13)
-    {
-        chassis_feedback_data.power_flag=1; 
-    }
-    else
-    {
-        chassis_feedback_data.power_flag=0; 
-    }
-
-    // 完成功率限制后进行电机参考输入设定
-    DJIMotorSetRef(motor_lf, vt_lf);
-    DJIMotorSetRef(motor_rf, vt_rf);
-    DJIMotorSetRef(motor_lb, vt_lb);
-    DJIMotorSetRef(motor_rb, vt_rb);
+    WheelLegSetEnabled(enabled);
+    for (uint8_t i = 0; i < WHEEL_LEG_MOTOR_COUNT; ++i)
+        SMotorStop(chassis_motor[i].motor);
 }
 
-/* 机器人底盘控制核心任务 */
-void ChassisTask()
+void ChassisTask(void)
 {
-    SubGetMessage(chassis_sub, &chassis_cmd_recv);
-    ChassisStateSet();
-    // 根据控制模式进行正运动学解算,计算底盘输出
-    MecanumCalculate();
+    FillMotorFeedback();
+    UpdateLegPosition(WHEEL_LEG_LEFT_JOINT_0, WHEEL_LEG_LEFT_JOINT_1, &leg_position.left_leg);
+    UpdateLegPosition(WHEEL_LEG_RIGHT_JOINT_0, WHEEL_LEG_RIGHT_JOINT_1, &leg_position.right_leg);
 
-    // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
-    LimitChassisOutput();
-    // 推送反馈消息
-    PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
-        SendPowerData();
-    SuperCapSend(cap, (uint8_t*)&power_data);
-
+    chassis_feedback.power_flag = 0;
+    PubPushMessage(chassis_pub, &chassis_feedback);
 }

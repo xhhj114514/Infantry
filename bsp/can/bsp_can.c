@@ -32,15 +32,21 @@ static uint8_t ex_idx;
  */
 static void CANAddSTDFilter(CANInstance *_instance) 
 {
-    CAN_FilterTypeDef can_filter_conf;
+    CAN_FilterTypeDef can_filter_conf = {0};
     static uint8_t can1_filter_idx = 0, can2_filter_idx = 14;
+    const uint32_t filter_id = _instance->rx_id << 5;
 
     // 标准帧配置（16位列表模式）
     can_filter_conf.FilterMode = CAN_FILTERMODE_IDLIST;
     can_filter_conf.FilterScale = CAN_FILTERSCALE_16BIT;
-    can_filter_conf.FilterFIFOAssignment = (_instance->tx_id & 1) ? CAN_RX_FIFO0 : CAN_RX_FIFO1;
+    can_filter_conf.FilterFIFOAssignment = (_instance->rx_id & 1) ? CAN_RX_FIFO0 : CAN_RX_FIFO1;
     can_filter_conf.SlaveStartFilterBank = 14;
-    can_filter_conf.FilterIdLow = _instance->rx_id << 5;  // STDID占11位，左移5位对齐
+    // List mode exposes four 16-bit slots. Fill every slot so uninitialized
+    // stack data cannot accidentally admit unrelated frames.
+    can_filter_conf.FilterIdHigh = filter_id;
+    can_filter_conf.FilterIdLow = filter_id;
+    can_filter_conf.FilterMaskIdHigh = filter_id;
+    can_filter_conf.FilterMaskIdLow = filter_id;
     can_filter_conf.FilterBank = (_instance->can_handle == &hcan1) ? 
                                 (can1_filter_idx++) : (can2_filter_idx++);
     can_filter_conf.FilterActivation = ENABLE;

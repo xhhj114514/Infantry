@@ -84,6 +84,15 @@ typedef struct
  */
 attitude_t *INS_Init(void);
 
+/** @brief Access the continuously updated attitude storage without reinitializing the IMU. */
+attitude_t *INS_GetData(void);
+
+/** @brief Return non-zero after BMI088 and the quaternion filter are initialized. */
+uint8_t INS_IsReady(void);
+
+/** @brief Vertical motion acceleration in the navigation frame, gravity removed. */
+float INS_GetVerticalMotionAccel(void);
+
 /**
  * @brief 此函数放入实时系统中,以1kHz频率运行
  *        p.s. osDelay(1);

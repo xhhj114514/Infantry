@@ -23,6 +23,7 @@
 static INS_t INS;
 static IMU_Param_t IMU_Param;
 static PIDInstance TempCtrl = {0};
+static volatile uint8_t ins_ready;
 
 const float xb[3] = {1, 0, 0};
 const float yb[3] = {0, 1, 0};
@@ -112,7 +113,23 @@ attitude_t *INS_Init(void)
     // noise of accel is relatively big and of high freq,thus lpf is used
     INS.AccelLPF = 0.0085;
     DWT_GetDeltaT(&INS_DWT_Count);
+    ins_ready = 1;
     return (attitude_t *)&INS.Gyro; // @todo: 这里偷懒了,不要这样做! 修改INT_t结构体可能会导致异常,待修复.
+}
+
+attitude_t *INS_GetData(void)
+{
+    return (attitude_t *)&INS.Gyro;
+}
+
+uint8_t INS_IsReady(void)
+{
+    return ins_ready;
+}
+
+float INS_GetVerticalMotionAccel(void)
+{
+    return INS.MotionAccel_n[Z];
 }
 
 /* 注意以1kHz的频率运行此任务 */

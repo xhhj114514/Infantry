@@ -9,12 +9,12 @@
 #include "robot.h"
 #include "ins_task.h"
 #include "motor_task.h"
-#include "referee_task.h"
 #include "master_process.h"
 #include "daemon.h"
 #include "buzzer.h"
 
 #include "bsp_log.h"
+#include "bsp_dwt.h"
 
 osThreadId insTaskHandle;
 osThreadId robotTaskHandle;
@@ -46,9 +46,6 @@ void OSTaskInit()
 
     osThreadDef(robottask, StartROBOTTASK, osPriorityNormal, 0, 1024);
     robotTaskHandle = osThreadCreate(osThread(robottask), NULL);
-
-    osThreadDef(uitask, StartUITASK, osPriorityNormal, 0, 512);
-    uiTaskHandle = osThreadCreate(osThread(uitask), NULL);
 }
 
 __attribute__((noreturn)) void StartINSTASK(void const *argument)
@@ -65,7 +62,7 @@ __attribute__((noreturn)) void StartINSTASK(void const *argument)
         ins_dt = DWT_GetTimeline_ms() - ins_start;
         if (ins_dt > 1)
             LOGERROR("[freeRTOS] INS Task is being DELAY! dt = [%f]", &ins_dt);
-        SendMinipcData(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
+        // SendMinipcData(); // 解算完成后发送视觉数据,但是当前的实现不太优雅,后续若添加硬件触发需要重新考虑结构的组织
         osDelay(1);
     }
 }
@@ -109,28 +106,16 @@ __attribute__((noreturn)) void StartROBOTTASK(void const *argument)
 {
     static float robot_dt;
     static float robot_start;
+    uint32_t previous_wake_time = osKernelSysTick();
     LOGINFO("[freeRTOS] ROBOT core Task Start");
-    // 200Hz-500Hz,若有额外的控制任务如平衡步兵可能需要提升至1kHz
+    // The ported LQR/VMC gains were tuned for a 4 ms (250 Hz) control period.
     for (;;)
     {
         robot_start = DWT_GetTimeline_ms();
         RobotTask();
         robot_dt = DWT_GetTimeline_ms() - robot_start;
-        if (robot_dt > 5)
+        if (robot_dt > 4)
             LOGERROR("[freeRTOS] ROBOT core Task is being DELAY! dt = [%f]", &robot_dt);
-        osDelay(5);
-    }
-}
-
-__attribute__((noreturn)) void StartUITASK(void const *argument)
-{
-    LOGINFO("[freeRTOS] UI Task Start");
-    MyUIInit();
-    LOGINFO("[freeRTOS] UI Init Done, communication with ref has established");
-    for (;;)
-    {
-        // 每给裁判系统发送一包数据会挂起一次,详见UITask函数的refereeSend()
-        UITask();
-        osDelay(1); // 即使没有任何UI需要刷新,也挂起一次,防止卡在UITask中无法切换
+        osDelayUntil(&previous_wake_time, 4);
     }
 }

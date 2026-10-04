@@ -53,6 +53,26 @@
 			],
             "dependsOn": "build",
 			"problemMatcher": [],
-		}
+		},
+        {
+            "label": "Flash AND Start Debug",
+            "type": "shell",
+            "command": "Ozone",
+            "args": [
+                "${workspaceFolder}\\DBG\\DBG.jdebug",
+                // "-script",
+                // "${workspaceFolder}\\Load_Plugin.js"
+            ],
+            // "dependsOn": "Flash with OpenOCD",
+            // "group": {
+            //     "kind": "build",
+            //     "isDefault": false
+            // },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
     ]
 }

@@ -2,12 +2,15 @@
 #include "dji_motor.h"
 #include "servo_motor.h"
 #include "mi_motor.h"
+#include "smotor.h"
 void MotorControlTask()
 {
     static uint8_t cnt = 0; 
     if(cnt%5==0) //200hz
-    DJIMotorControl();
+        DJIMotorControl();
     if(cnt%10==0) //100hz
-    MiMotorControl();
+        MiMotorControl();
+    SMotorControl(); // 1kHz
 
+    cnt++;
 }

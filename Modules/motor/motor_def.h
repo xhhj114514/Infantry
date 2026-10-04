@@ -6,6 +6,38 @@
 
 #define LIMIT_MIN_MAX(x, min, max) (x) = (((x) <= (min)) ? (min) : (((x) >= (max)) ? (max) : (x)))
 
+/* Wheel-leg motor hardware/electrical parameters. Voltage is in V unless marked mV. */
+#define SMOTOR_MAX_VOLTAGE_MV 9690.0f
+#define WHEEL_LEG_CAN_HANDLE (&hcan2)
+#define WHEEL_LEG_JOINT_MAX_VOLTAGE_V (SMOTOR_MAX_VOLTAGE_MV / 1000.0f)
+#define WHEEL_LEG_WHEEL_MAX_VOLTAGE_V 4.5f
+#define WHEEL_LEG_JOINT_TORQUE_RATIO_NM_PER_V 0.0333f
+#define WHEEL_LEG_WHEEL_TORQUE_RATIO_NM_PER_V 0.0100f
+#define WHEEL_LEG_MOTOR_OUTPUT_RATIO 0.60f
+
+#define CHASSIS_MOTOR_TARGET_POSITION_RAD 0.0f
+#define CHASSIS_MOTOR_POSITION_PID_KP 10.0f
+#define CHASSIS_MOTOR_POSITION_PID_KI 0.0f
+#define CHASSIS_MOTOR_POSITION_PID_KD 0.0f
+#define CHASSIS_MOTOR_POSITION_MAX_SPEED_RPM 1500.0f
+#define CHASSIS_MOTOR_SPEED_PID_KP 10.0f
+#define CHASSIS_MOTOR_SPEED_PID_KI 20.0f
+#define CHASSIS_MOTOR_SPEED_PID_KD 0.0f
+#define CHASSIS_MOTOR_PID_IMPROVE (PID_Trapezoid_Intergral | PID_Integral_Limit)
+
+/* Order: left joint 0, left joint 1, left wheel, right joint 0, right joint 1, right wheel. */
+#define WHEEL_LEG_MOTOR_IDS {1, 2, 3, 5, 6, 7}
+#define WHEEL_LEG_MOTOR_DIRECTIONS {1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f}
+/* Placeholder mechanical offsets; align manually using (total_angle_rad - offset) * direction. */
+#define WHEEL_LEG_MOTOR_OFFSETS_RAD { \
+    0.0f, /* left joint 0 */         \
+    0.0f, /* left joint 1 */         \
+    0.0f, /* left wheel */           \
+    0.0f, /* right joint 0 */        \
+    0.0f, /* right joint 1 */        \
+    0.0f, /* right wheel */          \
+}
+
 /**
  * @brief 闭环类型,如果需要多个闭环,则使用或运算
  *        例如需要速度环和电流环: CURRENT_LOOP|SPEED_LOOP

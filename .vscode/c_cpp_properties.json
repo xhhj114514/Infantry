@@ -3,23 +3,22 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",//递归搜索该目录下的所有子文件夹
-                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/**",//根据HAL生成的文件配置而成
-                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/**",
-                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/**",
-                "${workspaceFolder}/Drivers/CMSIS/**"
+                "${workspaceFolder}/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE",
-                "USE_HAL_DRIVER", 
-	            "STM32F401xC"
+                "USE_HAL_DRIVER",
+                "STM32H723xx",
+                "ARM_MATH_CM7"
             ],
+            // "compilerPath": "D:\\MinGW\\bin\\gcc.exe",
+            "compilerPath": "D:\\DEV\\LLVM\\bin\\clang.exe",
             "cStandard": "c17",
             "cppStandard": "gnu++14",
-            "intelliSenseMode": "windows-gcc-x86",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            // "intelliSenseMode": "windows-gcc-x86",
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4
